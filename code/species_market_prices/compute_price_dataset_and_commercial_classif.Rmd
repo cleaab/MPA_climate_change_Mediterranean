@@ -1,0 +1,1564 @@
+---
+title: "Complete_script_price_dataset"
+output: html_document
+date: "2025-04-08"
+---
+
+## LIBRARIES
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+
+## AGGREGATE STECF DATA --------------------------------------------------
+
+```{r}
+### Importing landings data------------------------------------------------
+STECF_lgs_2002_2010 <- read.csv(here("data/fisheries_data/STECF_2011_landings_2002_2010.csv"), header = TRUE, sep = ',') %>% 
+  mutate(value = gsub(" ", "", value),
+         value = as.numeric(value)) #value was character
+  
+STECF_lgs_2008_2014 <- read.csv(here("data/fisheries_data/STECF_2015_landings_2008_2014.csv"), header = TRUE, sep = ',')
+
+STECF_lgs_2013_2022 <- read.csv(here("data/fisheries_data/STECF_2023_landings_2013_2022.csv"), header = TRUE, sep = ',') %>% 
+  mutate(year_publication = 2023)
+#first year is the file publication and other years represent the period recorded in the file
+
+summary(STECF_lgs_2002_2010)
+summary(STECF_lgs_2008_2014)
+summary(STECF_lgs_2013_2022)
+
+### Selection of species that are in Osmose & commercial-----------------
+# Vector of Osmose commercial species
+species_OSMOSE_MED <- read.csv(here("data/fisheries_data/species_OSMOSE_MED.csv"), header = TRUE, sep = ',') %>% 
+  
+  rename(scientific_name = species_name)
+
+
+species_code_F <- read.csv(here("data/fisheries_data/cl_fi_species_groups.csv"), header = TRUE, sep = ',') %>% 
+  
+  rename(species_code = X3A_Code) %>% 
+  
+  mutate(scientific_name = gsub(" ", "", Scientific_Name)) %>% 
+  
+  select(species_code, scientific_name) %>% 
+  
+  mutate(scientific_name = case_when(scientific_name == "Auxisrochei" ~ "Auxisrocheirochei",
+                                  
+                                  scientific_name == "Chelonauratus" ~ "Lizaaurata",
+                                  
+                                  scientific_name == "Mullusbarbatus" ~ "Mullusbarbatusbarbatus",
+                                  
+                                  scientific_name == "Platichthysflesus" ~ "Platichthysflesusflesus",
+                                  
+                                  TRUE ~ scientific_name)) %>% 
+  
+  distinct()
+
+  
+species_osmose_commercial <- left_join(species_OSMOSE_MED, species_code_F, by = "scientific_name") %>% 
+  
+  filter(F > 0 & ! scientific_name %in% c("Alosaalosa", "Alosafallax", "Anguillaanguilla")) 
+
+table(is.na(species_osmose_commercial))
+
+list_species_code <- species_osmose_commercial$species_code
+print(list_species_code)
+length(list_species_code) #84 species
+
+
+# Selecting landings data
+STECF_lgs_2002_2010_sorted <- subset(STECF_lgs_2002_2010, species_code %in% list_species_code)
+STECF_lgs_2008_2014_sorted <- subset(STECF_lgs_2008_2014, species_code %in% list_species_code)
+STECF_lgs_2013_2022_sorted <- subset(STECF_lgs_2013_2022, species_code %in% list_species_code)
+
+# Deleting NA and 0 and catch data that are only in weight or in value 
+# NA
+table(is.na(STECF_lgs_2002_2010_sorted$value)) # no NA
+table(is.na(STECF_lgs_2008_2014_sorted$value)) # no NA
+table(is.na(STECF_lgs_2013_2022_sorted$totwghtlandg)) # no NA
+table(is.na(STECF_lgs_2013_2022_sorted$totvallandg)) # no NA
+
+# Zero
+table(STECF_lgs_2002_2010_sorted$value == 0)
+table(STECF_lgs_2008_2014_sorted$value == 0)
+table(STECF_lgs_2013_2022_sorted$totwghtlandg == 0)
+table(STECF_lgs_2013_2022_sorted$totvallandg == 0)
+
+STECF_lgs_2002_2010_sorted <- STECF_lgs_2002_2010_sorted %>% 
+  filter(value > 0)
+
+STECF_lgs_2008_2014_sorted <- STECF_lgs_2008_2014_sorted %>% 
+  filter(value > 0)
+
+STECF_lgs_2013_2022_sorted <- STECF_lgs_2013_2022_sorted %>% 
+  filter(totwghtlandg > 0 & totvallandg > 0)
+
+### Transforming value colums into totwghtlandg & totvallandg
+STECF_lgs_2002_2010_sorted <- STECF_lgs_2002_2010_sorted %>% 
+  group_by(across(-c(value))) %>% 
+  summarise(value = sum(value)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = variable_code, values_from = value) %>% 
+  filter(! (is.na(totwghtlandg) | is.na(totvallandg))) %>% #some values exist only in weight or in value €
+  mutate(year_publication = 2011)
+
+
+STECF_lgs_2008_2014_sorted <- STECF_lgs_2008_2014_sorted %>% 
+  select(-c(comments, fs_name, cluster_name, unit, variable_name)) %>% 
+  group_by(across(-c(value))) %>% 
+  summarise(value = sum(value)) %>% 
+  ungroup() %>% 
+  filter(value != 0) %>% 
+  pivot_wider(names_from = variable_code, values_from = value) %>% 
+  filter(! (is.na(totwghtlandg) | is.na(totvallandg))) %>% #some values exist only in weight or in value €
+  mutate(year_publication = 2015)
+
+
+### Joining all tabs together
+# Clearing STECF_lgs_2013_2022_sorted
+colnames(STECF_lgs_2013_2022_sorted)
+
+intersect_1 <- intersect(colnames(STECF_lgs_2002_2010_sorted),
+                         colnames(STECF_lgs_2008_2014_sorted))
+intersect_all <- intersect(intersect_1, 
+                           colnames(STECF_lgs_2013_2022_sorted))
+
+STECF_data_joined <- full_join(STECF_lgs_2002_2010_sorted,
+                        STECF_lgs_2008_2014_sorted, 
+                        by = intersect_1) %>% 
+  full_join(STECF_lgs_2013_2022_sorted, by = intersect_all) %>% 
+  select(all_of(intersect_all))
+
+table(is.na(STECF_data_joined))
+
+
+##### outlier detection 
+colnames(STECF_data_joined)
+
+
+outlier_detection = STECF_data_joined %>%
+  mutate(price = totvallandg/(totwghtlandg)) %>%
+  filter(price < 50) %>%
+  group_by(species_code) %>%
+  mutate(q5 = quantile(price , 0.05),
+         q95 = quantile(price , 0.95)) %>%
+  ungroup() %>%
+  filter(price < q95) %>%
+  filter(price > q5) %>%
+  group_by(species_code) %>%
+  mutate(median = quantile(price, 0.5),
+         mean = mean(price, na.rm = T)) 
+
+STECF_data_joined = STECF_data_joined %>%
+  mutate(price = totvallandg/(totwghtlandg)) %>%
+  filter(price < 50) %>%
+  group_by(species_code) %>%
+  mutate(q5 = quantile(price , 0.05),
+         q95 = quantile(price , 0.95)) %>%
+  ungroup() %>%
+  filter(price < q95) %>%
+  filter(price > q5)
+
+## Transformation variables datasets ------------------------------------------------
+### Country names
+STECF_data_1 <- STECF_data_joined %>% 
+  mutate(fishing_entity = case_when(country_code == "CYP" ~ "Cyprus",
+                                  country_code == "ESP" ~ "Spain",
+                                  country_code == "FRA" ~ "France",
+                                  country_code == "GBR" ~ "Great Britain",
+                                  country_code == "GRC" ~ "Greece",
+                                  country_code == "HRV" ~ "Croatia",
+                                  country_code == "ITA" ~ "Italy",
+                                  country_code == "MLT" ~ "Malta",
+                                  country_code == "SVN" ~ "Slovenia"))
+
+table(is.na(STECF_data_1$fishing_entity))
+
+
+### Species name 
+STECF_data_2 <- left_join(STECF_data_1, species_osmose_commercial, by = c('species_code'), relationship = "many-to-many")
+
+table(is.na(STECF_data_2))
+
+
+### Gear types
+sort(unique(STECF_data_2$fishing_tech))
+sort(unique(STECF_data_2$vessel_length))
+artisanal_vessels <- c("VL0006", "VL0010", "VL0012", "VL0612", "VL1012")
+
+STECF_data_3 <- STECF_data_2 %>% 
+  mutate(fleet_v4 = case_when(vessel_length %in% artisanal_vessels
+                                       ~ "Artisanal",
+                              
+                              fishing_tech == "DFN" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                                       
+                              fishing_tech == "DRB" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                                       
+                              fishing_tech == "DTS" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Bottom_trawlers",
+                              
+                              fishing_tech == "FPO" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Artisanal",
+                              
+                              fishing_tech == "HOK" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Longliners",
+                              
+                              fishing_tech == "MGO" & ! scientific_name %in% c("Thunnusthynnus", "Thunnusalalunga") & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech == "MGP" & ! scientific_name %in% c("Thunnusthynnus", "Thunnusalalunga") & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech == "PG" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech == "PGO" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech == "PGP" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech == "PMP" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Other_industrial_fleets_and_unknown",
+                              
+                              fishing_tech %in% c("MGO", "MGP") & scientific_name %in% c("Thunnusthynnus", "Thunnusalalunga") & ! vessel_length %in% artisanal_vessels
+                                       ~ "Tuna_purse_seiners",
+                              
+                              fishing_tech %in% c("PS", "PTS", "TM") & ! scientific_name %in% c("Thunnusthynnus", "Thunnusalalunga") & ! vessel_length %in% artisanal_vessels
+                                       ~ "Purse_seiners_and_pelagic_trawlers",
+                              
+                              fishing_tech %in% c("PS", "PTS", "TM") & scientific_name %in% c("Thunnusthynnus", "Thunnusalalunga") & ! vessel_length %in% artisanal_vessels
+                                       ~ "Tuna_purse_seiners",
+                              
+                              
+                              fishing_tech == "TBB" & ! vessel_length %in% artisanal_vessels
+                                       ~ "Bottom_trawlers",
+                             
+                              TRUE ~ fishing_tech))  
+
+table(is.na(STECF_data_3))
+
+
+# Last modification and summarising
+STECF_data_4 <- STECF_data_3 %>%
+  
+  mutate(area_type = "sub_reg") %>%
+  
+  rename(species_name = scientific_name,
+         landed_value = totvallandg,
+         tonnes = totwghtlandg,
+         area_name = sub_reg) %>%
+  
+  filter(tonnes != 0 & landed_value != 0) %>%
+  
+  # STECF data is in kilos
+    mutate(tonnes = tonnes) %>% 
+
+  #mutate(tonnes = tonnes / 1000) %>% 
+  
+  select(-c("species_id", "F")) %>% 
+  
+  group_by(across(-c(tonnes, landed_value, fishing_tech, vessel_length))) %>% 
+  # summarising at the fleet scale not the fishing_tech since I never look at that detail again
+  
+  summarise(tonnes = sum(tonnes),
+            landed_value = sum(landed_value))
+  
+table(is.na(STECF_data_4))
+
+test = STECF_data_4 %>%
+  mutate(price = landed_value/tonnes)
+### Year overlap in data: 2008-2010 & 2013-2014--------------------------
+
+# 1st overlap: from 2008 to 2010-----------------------------------------
+STECF_2008_2010 <- subset(STECF_data_4, year %in% c(2008, 2009, 2010))
+table(STECF_2008_2010$year_publication)
+
+# Aggregating the dataset: summarising the catch value for each key
+  # Identification key
+colnames(STECF_2008_2010)
+
+STECF_2008_2010_key <- STECF_2008_2010 %>% 
+  unite("key_1", -tonnes, -landed_value, -year_publication, sep = "_", remove = FALSE) 
+
+STECF_2008_2010_aggregated <- STECF_2008_2010_key %>% 
+  group_by(key_1, year_publication) %>% 
+  summarise(tonnes = sum(tonnes),
+            landed_value = sum(landed_value))
+
+# Comparing the keys between the two files, 2011 and 2015
+STECF_2011 <- STECF_2008_2010_aggregated %>% filter(year_publication == 2011)
+STECF_2015 <- STECF_2008_2010_aggregated %>% filter(year_publication == 2015)
+
+# Identifying common keys
+common_keys <- intersect(STECF_2011$key_1, STECF_2015$key_1)
+
+# Extracting unique data
+corresponding_data_1 <- STECF_2008_2010_key %>% 
+  ungroup() %>% 
+  select(-year_publication)
+
+unique_data_2008_2010 <- STECF_2008_2010_aggregated %>% 
+  select(-year_publication) %>% 
+  filter(!key_1 %in% common_keys) %>% 
+  left_join(corresponding_data_1, by = c("key_1", "tonnes", "landed_value"))
+
+length(unique(unique_data_2008_2010$key_1)) == length(unique_data_2008_2010$key_1)
+
+# Averaging common data
+corresponding_data_2 <- STECF_2008_2010_key %>% 
+  ungroup() %>% 
+  select(-c(year_publication, tonnes, landed_value)) %>% 
+  distinct(key_1, .keep_all = TRUE)
+
+# summarising will erase the corresponding data in other colums
+# removing tonnes and landed because they won't match with the averages unless the data was identical in 2011 and 2015 files
+
+common_data_2008_2010 <- STECF_2008_2010_aggregated %>% 
+  select(-year_publication) %>% 
+  ungroup() %>% 
+  filter(key_1 %in% common_keys) %>% 
+  group_by(key_1) %>% 
+  summarise(landed_value = mean(landed_value),
+            tonnes = mean(tonnes),
+            .groups = 'drop') %>% 
+  left_join(corresponding_data_2, by = c("key_1"))
+
+any(duplicated(corresponding_data_2$key_1)) # FALSE
+table(is.na(corresponding_data_2$key_1)) # FALSE
+
+length(unique(common_data_2008_2010$key_1)) == length(common_keys) # TRUE
+
+# Final step: removing data in STECF_data_4 for 2008, 2009, 2010 and join both datasets (unique data and common data)
+
+cols_join_1 <- intersect(colnames(STECF_data_4), colnames(unique_data_2008_2010))
+
+cols_join_2 <- c(cols_join_1, "key_1")
+
+STECF_data_5 <- STECF_data_4 %>% 
+  filter(!year %in% c(2008, 2009, 2010)) %>% 
+  full_join(unique_data_2008_2010, by = cols_join_1) %>% 
+  full_join(common_data_2008_2010, by = cols_join_2) %>% 
+  ungroup() %>% 
+  select(-key_1)
+
+table(STECF_data_5$year)
+table(is.na(STECF_data_5$year_publication))
+
+
+# 2nd overlap: from 2013 to 2014-----------------------------------------
+STECF_2013_2014 <- subset(STECF_data_4, year %in% c(2013, 2014))
+table(STECF_2013_2014$year_publication)
+
+# Aggregating the dataset: summarising the catch value for each key
+  # Identification key
+colnames(STECF_2013_2014)
+
+STECF_2013_2014_key <- STECF_2013_2014 %>% 
+  unite("key_1", -tonnes, -landed_value, -year_publication, sep = "_", remove = FALSE) 
+
+STECF_2013_2014_aggregated <- STECF_2013_2014_key %>% 
+  group_by(key_1, year_publication) %>% 
+  summarise(tonnes = sum(tonnes),
+            landed_value = sum(landed_value))
+
+# Comparing the keys between the two files, 2015 and 2022
+STECF_2015 <- STECF_2013_2014_aggregated %>% filter(year_publication == 2015)
+STECF_2023 <- STECF_2013_2014_aggregated %>% filter(year_publication == 2023)
+
+# Identifying common keys
+common_keys <- intersect(STECF_2015$key_1, STECF_2023$key_1)
+## /!\ there is no common key therefore all data can be kept
+
+## Aggregating by GSA----------------------------------------------------
+STECF_data_6 <- STECF_data_5 %>% 
+
+  filter(area_name != "0") %>%
+  
+  # correspondance FAO stat divisions and GSA
+  mutate(gsa = case_when(area_name == "37.1.1" ~ "1,2,3,4,5,6,11.1",
+                         
+                         area_name == "37.1.2" ~ "7",
+                         
+                         area_name == "37.1.3" ~ "8,9,10,11.2,12",
+                         
+                         area_name == "37.2.1" ~ "17,18",
+                         
+                         area_name == "37.2.2" ~ "13,14,15,16,19,20,21",
+                         
+                         area_name == "37.3.1" ~ "22,23",
+                         
+                         area_name == "37.3.2" ~ "24,25,26,27",
+                         
+                         area_name == "sa 1" ~ "1", 
+                         
+                         area_name == "sa 2" ~ "2", 
+                         
+                         area_name == "sa 3" ~ "3",
+                         
+                         area_name == "sa 4" ~ "4", 
+                         
+                         area_name == "sa 5" ~ "5", 
+                         
+                         area_name == "sa 6" ~ "6",
+                         
+                         area_name == "sa 7" ~ "7",
+                         
+                         area_name == "sa 8" ~ "8", 
+                         
+                         area_name == "sa 9" ~ "9", 
+                         
+                         area_name == "sa 10" ~ "10", 
+                         
+                         area_name == "sa 11" ~ "11", 
+                         
+                         area_name == "sa 11.1" ~ "11.1", 
+                         
+                         area_name == "sa 11.2" ~ "11.2", 
+                         
+                         area_name == "sa 12" ~ "12",
+                         
+                         area_name == "sa 17" ~ "17",
+                         
+                         area_name == "sa 18" ~ "18", 
+                         
+                         area_name == "sa 13" ~ "13",
+                         
+                         area_name == "sa 14" ~ "14", 
+                         
+                         area_name == "sa 15" ~ "15",
+                         
+                         area_name == "sa 16" ~ "16", 
+                         
+                         area_name == "sa 19" ~ "19", 
+                         
+                         area_name == "sa 20" ~ "20", 
+                         
+                         area_name == "sa 21" ~ "21",
+                         
+                         area_name == "sa 22" ~ "22",
+                         
+                         area_name == "sa 23" ~ "23",
+                         
+                         area_name == "sa 24" ~ "24", 
+                         
+                         area_name == "sa 25" ~ "25", 
+                         
+                         area_name == "sa 26" ~ "26",
+                         
+                         area_name == "sa 27" ~ "27",
+                         
+                         TRUE ~ area_name))
+                         
+
+
+#------------------------------------------------------------------------
+# Final STECF dataset
+STECF_data <- STECF_data_6 %>% 
+  
+  select(-year_publication) %>%
+  
+  mutate(source = "STECF")
+
+#table(is.na(STECF_data)) # FALSE
+
+## Saving tab------------------------------------------------------------
+write.csv(STECF_data, file = "STECF_data.csv")
+
+```
+
+## AGGREGATING SAU DATA -------------------------------------------------
+
+```{r}
+
+Albania <- read.csv(here("data/fisheries_data/SAU EEZ 8 v50-1 Albania.csv"), header = TRUE, 
+                    sep = ',')
+Algeria <- read.csv(here("data/fisheries_data/SAU EEZ 12 v50-1 Algeria.csv"), header = TRUE, 
+                    sep = ',')
+Croatia <- read.csv(here("data/fisheries_data/SAU EEZ 191 v50-1 Croatia.csv"), header = TRUE, 
+                    sep = ',')
+Cyprus_North <- read.csv(here("data/fisheries_data/SAU EEZ 197 v50-1 Cyprus (North).csv"), 
+                         header = TRUE, sep = ',')
+Cyprus_South <- read.csv(here("data/fisheries_data/SAU EEZ 198 v50-1 Cyprus (South).csv"), 
+                         header = TRUE, sep = ',')
+Greece <- read.csv(here("data/fisheries_data/SAU EEZ 300 v50-1 Greece.csv"), header = TRUE, 
+                   sep = ',')
+Italy <- read.csv(here("data/fisheries_data/SAU EEZ 380 v50-1 Italy.csv"), header = TRUE, 
+                  sep = ',')
+Lebanon <- read.csv(here("data/fisheries_data/SAU EEZ 422 v50-1 Lebanon.csv"), header = TRUE, 
+                    sep = ',')
+Libya <- read.csv(here("data/fisheries_data/SAU EEZ 434 v50-1 Libya.csv"), header = TRUE, 
+                  sep = ',')
+Malta <- read.csv(here("data/fisheries_data/SAU EEZ 470 v50-1 Malta.csv"), header = TRUE, 
+                  sep = ',')
+Syria <- read.csv(here("data/fisheries_data/SAU EEZ 760 v50-1 Syria.csv"), header = TRUE, 
+                  sep = ',')
+Tunisia <- read.csv(here("data/fisheries_data/SAU EEZ 788 v50-1 Tunisia.csv"), header = TRUE, 
+                    sep = ',')
+Turkey <- read.csv(here("data/fisheries_data/SAU EEZ 793 v50-1 Turkey.csv"), header = TRUE, 
+                   sep = ',')
+Montenegro <- read.csv(here("data/fisheries_data/SAU EEZ 891 v50-1 Montenegro.csv"), header = TRUE,
+                       sep = ',')
+Corsica <- read.csv(here("data/fisheries_data/SAU EEZ 899 v50-1 Corsica.csv"), header = TRUE, 
+                    sep = ',')
+Crete <- read.csv(here("data/fisheries_data/SAU EEZ 900 v50-1 Crete.csv"), header = TRUE, 
+                  sep = ',')
+Sicily <- read.csv(here("data/fisheries_data/SAU EEZ 901 v50-1 Sicily.csv"), header = TRUE, 
+                   sep = ',')
+Sardinia <- read.csv(here("data/fisheries_data/SAU EEZ 902 v50-1 Sardinia.csv"), header = TRUE, 
+                     sep = ',')
+Balearic <- read.csv(here("data/fisheries_data/SAU EEZ 903 v50-1 Balearic.csv"), header = TRUE, 
+                     sep = ',')
+France <- read.csv(here("data/fisheries_data/SAU EEZ 918 v50-1 France.csv"), header = TRUE, 
+                   sep = ',')
+Egypt <- read.csv(here("data/fisheries_data/SAU EEZ 933 v50-1 Egypt.csv"), header = TRUE, 
+                  sep = ',')
+Israel <- read.csv(here("data/fisheries_data/SAU EEZ 939 v50-1 Israel.csv"), header = TRUE, 
+                   sep = ',')
+Morocco <- read.csv(here("data/fisheries_data/SAU EEZ 947 v50-1 Morocco.csv"), header = TRUE, 
+                    sep = ',')
+Spain <- read.csv(here("data/fisheries_data/SAU EEZ 962 v50-1 Spain.csv"), header = TRUE, 
+                  sep = ',')
+
+EEZ <- list(Albania, Algeria, Croatia, Cyprus_North, Cyprus_South,
+         Greece, Italy, Lebanon, Libya, Malta, Syria, Tunisia,
+         Turkey, Montenegro, Corsica, Crete, Sicily, Sardinia,
+         Balearic, France, Egypt, Israel, Morocco, Spain)
+
+length(EEZ)
+
+names(EEZ) <- c('Albania', 'Algeria', 'Croatia', 'Cyprus_North', 'Cyprus_South',
+                'Greece', 'Italy', 'Lebanon', 'Libya', 'Malta', 'Syria', 'Tunisia',
+                'Turkey', 'Montenegro', 'Corsica', 'Crete', 'Sicily', 'Sardinia',
+                'Balearic', 'France', 'Egypt', 'Israel', 'Morocco', 'Spain')
+
+### Aggregating data -----------------------------------------------------
+col <- names(Albania) # joining keys
+
+SAU_1950_2019 <- full_join(EEZ[[1]], EEZ[[2]], by = col)
+
+for (i in 3:24){
+  
+  SAU_1950_2019 <- SAU_1950_2019 %>% full_join(EEZ[[i]], by = col)
+  
+}
+
+# to check that all the lines were kept
+s = c()
+for (i in 1:24){
+  
+  s = c(s, nrow(EEZ[[i]])) 
+}
+print(sum(s) == nrow(SAU_1950_2019)) #TRUE
+
+
+### Filtering data and renaming species----------------------------------
+# Deleting NA and 0 and catch data that are only in weight or in value 
+table(is.na(SAU_1950_2019$landed_value))
+table(is.na(SAU_1950_2019$tonnes))
+table(SAU_1950_2019$landed_value == 0)
+table(SAU_1950_2019$tonnes == 0)
+
+# Nas in landed_value + Nas in uncertainty_score = number of Nas in dataset
+
+SAU_1950_2019_sorted <- SAU_1950_2019 %>% 
+  
+  select(-uncertainty_score) %>% 
+  
+  filter(! is.na(landed_value) & ! is.na(tonnes) 
+         & landed_value > 0 & tonnes > 0)
+
+table(is.na(SAU_1950_2019_sorted$landed_value))
+table(is.na(SAU_1950_2019_sorted$tonnes))
+table(SAU_1950_2019_sorted$landed_value == 0)
+table(SAU_1950_2019_sorted$tonnes == 0)
+table(is.na(SAU_1950_2019_sorted)) # FALSE
+
+SAU_1950_2019_sorted$present_OSMOSE <- NA
+
+# Complete dataset by correcting names (when changed) and by reassigning genus at the species level according to SAU/FAO proportions
+SAU_2002_2019 <- SAU_1950_2019_sorted %>% 
+  
+  filter(fishing_sector %in% c('Industrial', 'Artisanal') & year > 2001) %>% 
+  
+  mutate(scientific_name = case_when(scientific_name == 'Etrumeus sadina' ~ 'Etrumeus teres',
+                                     scientific_name == 'Chelon auratus' ~ 'Liza aurata',
+                                     scientific_name == 'Gobius ophiocephalus' ~ 'Zosterisessor ophiocephalus', 
+                                     scientific_name == 'Psetta maxima' ~ 'Scophthalmus maximus', 
+                                     TRUE ~ scientific_name)) %>% 
+  
+  mutate(scientific_name_corrected = scientific_name) %>%
+  
+  # CEPHALOPODS -----------------------------------------------------------
+
+# Loligo vulgaris
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Loligo", "Loliginidae") ~ "Loligo vulgaris",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name %in% c("Loligo", "Loliginidae") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  
+  # Eledone cirrhosa
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Eledone cirrhosa") | (scientific_name == "Eledone" & fishing_entity %in% c("Cyprus", "Montenegro", "Malta")) | (scientific_name == "Octopoda" & fishing_entity %in% c("Egypt")) | (scientific_name == "Octopoda" & gear_type %in% c("small scale gillnets", "small scale lines") & fishing_entity %in% c("Algeria", "Egypt") ) ~ "Eledone cirrhosa",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Eledone cirrhosa") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  
+  # Illex coindetii
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Illex coindetii", "Illex") ~ "Illex coindetii",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Illex coindetii") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  
+  
+  # CRUSTACEANS ---------------------------------------------------------------
+
+# Palaemon serratus
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Palaemon serratus", "Palaemonidae") ~ "Palaemon serratus",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Palaemon serratus") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Aristaeomorpha foliacea
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Aristaeomorpha foliacea", "Aristeidae") ~ "Aristaeomorpha foliacea",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Aristaeomorpha foliacea") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # LARGE PELAGICS --------------------------------------------------------------
+
+# Auxis rochei
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Auxis rochei", "Auxis") ~ "Auxis rochei rochei",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Auxis rochei rochei") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Caranx crysos
+  mutate(scientific_name_corrected = case_when(grepl('Caranx', scientific_name) ~ "Caranx crysos",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  # Liza aurata
+  mutate(scientific_name_corrected = case_when(grepl('Chelon auratus', scientific_name) ~ "Liza aurata",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Liza aurata") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Sphyraena sphyraena
+  mutate(scientific_name_corrected = case_when(grepl('Sphyraena', scientific_name) ~ "Sphyraena sphyraena",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Sphyraena sphyraena") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Thunnus alalunga - add 19% of Thunnus (SAU data 1990-2019)
+  
+  # Thunnus thynnus - add 81% of Thunnus (SAU data 1990-2019)
+  
+  
+  # DEMERSAL SPECIES ----------------------------------------------------------
+
+# Pagellus : add 73.1% of Pagellus to erythrinus, 1.94% to acarne
+
+# LARGE DEMERSAL SPECIES ----------------------------------------------------
+
+# Dicentrarchus labrax - add prop Med Sea for Dicentrarchus 84% - labrax
+
+# Epinephelus marginatus
+
+# Lophius budegassa - add 4% of Lophius and Lophiidae (SAU period 2006-2013, FAO differentiation not clear)
+
+# Lophius piscatorius - add 96% of Lophius and Lophiidae (SAU period 2006-2013, FAO differentiation not clear)
+
+# Merlangius merlangus
+
+# Merluccius merluccius
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Merluccius merluccius", "Merluccius", "Merlucciidae") ~ "Merluccius merluccius",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Merluccius merluccius") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Micromesistius poutassou
+  
+  # Mustelus mustelus : add 89% of Mustelus (according to FAO prop 1990-2021)
+  
+  # Trisopterus luscus
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Trisopterus luscus", "Trisopterus") ~ "Trisopterus luscus",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Trisopterus luscus") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # BENTHIC species -----------------------------------------------------------
+
+# Chelidonichthys lucerna - add 14% Trigliidae(prop FAO 1990-2019) - add proportion for Turkey
+
+# Eutrigla gurnardus - add 71% of Trigliidae (prop FAO 1990-2019) - add proportion for Turkey for Trigliidae
+
+# Trigla lyra - add Trigla
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Trigla") ~ "Trigla lyra",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Trigla lyra") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%  
+  
+  
+  # Dentex dentex - add 70% of Dentex to Dentex dentex
+  
+  # Diplodus annularis - add 28% of Diplodus (from SAU prop 1990-2019)
+  
+  # Diplodus puntazzo - add 1% of cervinus
+  
+  # Diplodus cervinus - add 4% of Diplodus (FAO prop 1990-2019)
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Diplodus cervinus cervinus") ~ "Diplodus cervinus",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Diplodus cervinus") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  # Diplodus sargus sargus - add 57% of Diplodus (from SAU prop 1990-2019)
+  
+  # Diplodus vulgaris - add 10% of Diplodus (from SAU prop 1990-2019)
+  
+  # Lepidorhombus whiffiagonis - add 49% Lepidorhombus (SAU prop 1990-2019)
+  
+  # Mullus surmuletis - add 39% of Mullus
+  
+  # Mullus barbatus barbatus - add 61% of Mullus
+  
+  # Phycis phycis - add 35% of Phycis to Phycis phycis (SAU prop 2006-2013)
+
+# Platichthys flesus flesus
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Platichthys flesus", "Platichthys") ~ "Platichthys flesus flesus",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Platichthys flesus flesus") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Scyliorhinus canicula - add 99% of Scyliorhinus (prop SAU 1990-2019) between stellaris and canicula
+  
+  # Solea solea #modifier le nom avec Solea et Soleidae ?
+  
+  # Saurida undosquamis
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Synodontidae") ~ "Saurida undosquamis",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Saurida undosquamis") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Upeneus moluccensis
+  mutate(scientific_name_corrected = case_when((scientific_name %in% c("Mullidae") & fishing_entity %in% c("Israel", "Lebanon", "Syria")) ~ "Upeneus moluccensis",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Upeneus moluccensis") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # SMALL PELAGICS  -----------------------------------------------------------
+
+# Etrumeus teres - lower by 50% because other Clupeiformes (we consider commercial species like sardine or anchovy are not in this cateogory)
+mutate(scientific_name_corrected = case_when(scientific_name %in% c("Clupeiformes") ~ "Etrumeus teres",
+                                             TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Etrumeus teres") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>%
+  
+  # Sardinella aurita - very hard to distinguish from maderensis - add 50% of Sardinella (version 1)
+  
+  # version 2 . add 97.5% of Sardinella (SAU 1990-2019 prop)
+  # Scomber japonicus - mislabelled -> colias, add 23% of Scomber
+  
+  mutate(scientific_name_corrected = case_when(scientific_name %in% c("Scomber colias") ~ "Scomber japonicus",
+                                               TRUE ~ scientific_name_corrected)) %>%
+  
+  mutate(present_OSMOSE = case_when(scientific_name_corrected %in% c("Scomber japonicus") ~ "Yes",
+                                    TRUE ~ present_OSMOSE)) %>% 
+# Scomber scombrus - add 77% of Scomber
+
+# Spicara smaris - add 30% of Spicara (FAO 1990-2019)
+
+# Spicara maena - add 60% of Spicara (FAO 1990-2019)
+
+# Trachurus trachurus - add 41.5% of Trachurus (1990-2019 SAU data)
+
+# Trachurus mediterraneus - add 57.9% of Trachurus (1990-2019 SAU data)
+
+# Trachurus picturatus - add 0.55% of Trachurus (1990-2019 SAU data)
+  
+  # mutate(scientific_name_corrected = case_when(scientific_name == "Diplodus sargus sargus" ~ "Diplodussargus", 
+  #                                              TRUE ~ scientific_name_corrected)) %>% 
+  
+  mutate(species_name = gsub(" ", "", scientific_name_corrected)) #remove spacing in scientific name of species
+
+
+# --------------------------------------------------------
+
+# List of commercial species in osmose
+commercial_species_OSMOSE_MED <- species_osmose_commercial$scientific_name
+
+genus_to_assign <- c( "Thunnus", "Pagellus", 
+                      "Dicentrarchus", "Lophius", "Lophiidae", "Mustelus", 
+                      "Trigliidae", "Dentex", "Diplodus", "Lepidorhombus", 
+                      "Mullus", "Phycis", "Scyliorhinus", "Sardinella", "Scomber", 
+                      "Spicara", "Trachurus")
+
+# Filtering data of the commercial species in osmose
+SAU_2002_2019 <- subset(SAU_2002_2019, species_name %in% c(commercial_species_OSMOSE_MED,genus_to_assign))
+
+# Tab of correctly named species
+sp_right_name <- subset(SAU_2002_2019, species_name %in% commercial_species_OSMOSE_MED)
+
+# Tab of uncorrectly named species
+sp_wrong_name <- subset(SAU_2002_2019, species_name %in% genus_to_assign)
+
+
+### Assigning genus to species-------------------------------------------
+
+SAU_OSMOSE_all_exploited_sp <- sp_wrong_name
+
+i <- 1
+
+loop <- nrow(SAU_OSMOSE_all_exploited_sp)
+
+while (i <= loop){
+  
+  # Thunnus
+  if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Thunnus"){
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Thunnus alalunga"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.19
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Thunnus thynnus"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.81
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Pagellus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Pagellus"){
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Pagellus erythrinus"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.731
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Pagellus acarne"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.194
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Dicentrarchus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Dicentrarchus"){
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Dicentrarchus labrax"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.84
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Lophius
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Lophius" | SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Lophiidae"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Lophius budegassa"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.04
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Lophius piscatorius"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.96
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Mustelus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Mustelus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Mustelus mustelus"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.89
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Trigliidae
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Trigliidae"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Chelidonichthys lucerna"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.14
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Eutrigla gurnardus"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.71
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Dentex
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Dentex"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Dentex dentex"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.70
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Diplodus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Diplodus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Diplodus annularis"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.28
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Diplodus puntazzo"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.01
+    
+    sp3 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp3$scientific_name_corrected = "Diplodus cervinus"
+    sp3$present_OSMOSE = "Yes"
+    sp3$tonnes = sp3$tonnes*0.04
+    
+    sp4 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp4$scientific_name_corrected = "Diplodus sargus"
+    sp4$present_OSMOSE = "Yes"
+    sp4$tonnes = sp4$tonnes*0.57
+    
+    sp5 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp5$scientific_name_corrected = "Diplodus vulgaris"
+    sp5$present_OSMOSE = "Yes"
+    sp5$tonnes = sp5$tonnes*0.10
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2, sp3, sp4, sp5)
+    
+    loop <- loop - 1
+  }
+  
+  # Lepidorhombus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Lepidorhombus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Lepidorhombus whiffiagonis"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.49
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Mullus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Mullus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Mullus surmuletus"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.39
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Mullus barbatus barbatus"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.61
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Phycis
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Phycis"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Phycis phycis"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.35
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  
+  # Scyliorhinus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Scyliorhinus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Scyliorhinus canicula"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.99
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Sardinella
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Sardinella"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Sardinella aurita"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.5 #because maderensis and aurita very hard to distinguish / version 2 = 0.975 (prop SAU 1990-2019)
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1)
+    
+    loop <- loop - 1
+  }
+  
+  # Scomber
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Scomber"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Scomber japonicus"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.23
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Scomber scombrus"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.77
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Spicara
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Spicara"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Spicara smaris"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.30
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Spicara maena"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.6
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2)
+    
+    loop <- loop - 1
+  }
+  
+  # Trachurus
+  else if (SAU_OSMOSE_all_exploited_sp[i,]$scientific_name_corrected == "Trachurus"){
+    
+    sp1 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp1$scientific_name_corrected = "Trachurus trachurus"
+    sp1$present_OSMOSE = "Yes"
+    sp1$tonnes = sp1$tonnes*0.415
+    
+    sp2 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp2$scientific_name_corrected = "Trachurus mediterraneus"
+    sp2$present_OSMOSE = "Yes"
+    sp2$tonnes = sp2$tonnes*0.579
+    
+    sp3 = SAU_OSMOSE_all_exploited_sp[i,]
+    sp3$scientific_name_corrected = "Trachurus picturatus"
+    sp3$present_OSMOSE = "Yes"
+    sp3$tonnes = sp3$tonnes*0.55
+    
+    SAU_OSMOSE_all_exploited_sp = rbind(SAU_OSMOSE_all_exploited_sp[-i,], sp1, sp2, sp3)
+    
+    loop <- loop - 1
+  }
+  
+  else{
+    i <- i + 1
+  }
+  
+}
+
+sp_wrong_name <- SAU_OSMOSE_all_exploited_sp %>% 
+  
+  mutate(species_name = gsub(" ", "", scientific_name_corrected))
+
+
+### Aggregating both tabs and selecting species that are in osmose-------
+SAU_data_1 <- full_join(sp_right_name, sp_wrong_name, by = names(sp_right_name)) %>% 
+  select(! present_OSMOSE)
+
+table(SAU_data_1$species_name %in% species_osmose_commercial$scientific_name) # TRUE
+
+# Joining osmose species tab 
+SAU_data_2 <- left_join(SAU_data_1, species_OSMOSE_MED, by = c("species_name" = "scientific_name"))
+
+# Removing discard data
+SAU_data_discards <- SAU_data_2
+SAU_data_3 <- subset(SAU_data_2, ! catch_type == "Discards")
+
+#table(is.na(SAU_data$tonnes)) FALSE
+#table(is.na(SAU_data$landed_value)) FALSE
+#table(SAU_data$tonnes == 0) FALSE
+#table(SAU_data$landed_value == 0) FALSE
+
+# Importing file with info on species
+list_groups <- read.csv(here("data/classification_species.csv"), 
+                        header = TRUE, sep = ",") %>%
+  
+  select(species_name, group2) %>% 
+  
+  mutate(species_name = case_when(species_name == "Diplodussargussargus" ~ "Diplodussargus", 
+                                  TRUE ~ species_name))
+  
+
+SAU_data_4 <- left_join(SAU_data_3, list_groups, by = "species_name")
+
+##### outlier detection 
+colnames(SAU_data_4)
+
+outlier_detection = SAU_data_4 %>%
+  mutate(price = landed_value/(tonnes * 1000)) %>%
+  filter(price < 50) %>%
+  group_by(species_name) %>%
+  mutate(q5 = quantile(price , 0.05),
+         q95 = quantile(price , 0.95)) %>%
+  ungroup() %>%
+  filter(price < q95) %>%
+  filter(price > q5) %>%
+  group_by(species_name) %>%
+  mutate(median = quantile(price, 0.5),
+         mean = mean(price, na.rm = T)) 
+
+SAU_data_4 = SAU_data_4 %>%
+  mutate(price = landed_value/(tonnes * 1000)) %>%
+  filter(price < 50) %>%
+  group_by(species_name) %>%
+  mutate(q5 = quantile(price , 0.05),
+         q95 = quantile(price , 0.95)) %>%
+  ungroup() %>%
+  filter(price < q95) %>%
+  filter(price > q5) %>%
+  dplyr::select(-price, -q5, -q95)
+
+## Aggregating fleets----------------------------------------------------
+
+SAU_data_5 <- SAU_data_4 %>% 
+  # Fleets version 2
+  mutate(grouped_gear_types = case_when(gear_type %in% c("pole and line",
+                                                         "longline",
+                                                         "hand lines") ~ "hooksandlines",
+
+                                        gear_type %in% c("bottom trawl", "shrimp trawl") & group2 != "Crustacean" ~ "bottomtrawl",
+
+                                        gear_type %in% c("bottom trawl", "shrimp trawl") & group2 == "Crustacean" ~ "shrimptrawl",
+
+                                        gear_type %in% c("shrimp trawl") ~ "shrimptrawl",
+
+                                        gear_type %in% c("pelagic trawl") ~ "purseseineandpelagictrawl",
+
+                                        # gear_type %in% c("tuna purse seine") ~ "tuna purse seiners",
+
+                                        gear_type %in% c("purse seine") & ! species_name %in% c("Thunnusthynnus", "Thunnusalalunga") ~ "purseseineandpelagictrawl", 
+                                        
+                                        gear_type %in% c("purse seine") & species_name %in% c("Thunnusthynnus", "Thunnusalalunga") ~ "tunapurseseine",
+                                        
+                                        gear_type %in% c("small scale encircling nets",
+                                                         "small scale gillnets",
+                                                         "small scale seine nets",
+                                                         "small scale trammel net",
+                                                         "small scale other nets",
+                                                         "small scale purse seine",
+                                                         "cast nets",
+                                                         "bagnets") ~ "artisanalnets",
+
+                                        gear_type %in% c("small scale lines",
+                                                         "small scale longline",
+                                                         "small scale hand lines") ~ "artisanallines",
+
+                                        gear_type %in% c("artisanal fishing gear") & fishing_sector == "Industrial" ~ "artisanallines", # only for Xiphias gladius (hook for sure)
+
+                                        gear_type %in% c("small scale pots or traps",
+                                                         "hand or tools",
+                                                         "harpoon",
+                                                         "artisanal fishing gear",
+                                                         "other", 
+                                                         "unknown class", 
+                                                         "unknown by author",
+                                                         "unknown by source") & fishing_sector == "Artisanal" ~ "mixedartisanal",
+
+                                        gear_type %in% c("dredge") ~ "dredge",
+
+                                        gear_type %in% c("gillnet") ~ "gillnet",
+
+                                        TRUE ~ "industrialothers")) %>% 
+  
+  rename(fleet = grouped_gear_types) %>% 
+  
+  # Fleets version 4
+  
+  mutate(fleet_v4 = case_when(fleet %in% c("artisanallines", "artisanalnets", "mixedartisanal") ~ "Artisanal",
+                              
+                              fleet %in% c("bottomtrawl", "shrimptrawl") ~ "Bottom_trawlers",
+                              
+                              fleet == "purseseineandpelagictrawl" ~ "Purse_seiners_and_pelagic_trawlers",
+                              
+                              fleet == "tunapurseseine" ~ "Tuna_purse_seiners",
+                              
+                              fleet == "hooksandlines" ~ "Longliners",
+                              
+                              fleet %in% c("dredge", "industrialothers", "gillnet") ~ "Other_industrial_fleets_and_unknown",
+                              
+                              TRUE ~ fleet))
+
+table(SAU_data_5$fleet_v4)
+
+table(is.na(SAU_data_5)) # FALSE
+
+
+## Aggregating by GSA---------------------------------------------------
+# correspondance eez - gsa
+SAU_data_6 <- SAU_data_5 %>% 
+
+  mutate(gsa = case_when(area_name %in% c("Albania", "Montenegro", "Croatia", "Italy (mainland)", "Sicily (Italy)") ~ "9,10,16,17,18,19",
+                         
+                         area_name %in% c("Corsica (France)") ~ "8",
+                         
+                         area_name %in% c("Cyprus (North)", "Cyprus (South)") ~ "25",
+                         
+                         area_name %in% c("France (Mediterranean)") ~ "7",
+                         
+                         area_name %in% c("Malta") ~ "15",
+                         
+                         area_name %in% c("Sardinia (Italy)") ~ "11.1,11.2",
+                         
+                         area_name %in% c("Syria", "Lebanon", "Israel (Mediterranean)") ~ "27",
+                         
+                         area_name %in% c("Algeria") ~ "4",
+                         
+                         area_name %in% c("Crete (Greece)") ~ "23",
+                         
+                         area_name %in% c("Greece (without Crete)") ~ "20,22",
+                         
+                         area_name %in% c("Tunisia") ~ "12,13,14",
+                         
+                         area_name %in% c("Balearic Islands (Spain)") ~ "5",
+                         
+                         area_name %in% c("Egypt (Mediterranean)") ~ "26",
+                         
+                         area_name %in% c("Libya") ~ "21",
+                         
+                         area_name %in% c("Morocco (Mediterranean)") ~ "3",
+                         
+                         area_name %in% c("Spain (mainland, Med and Gulf of Cadiz)") ~ "1,2,6",
+                         
+                         TRUE ~ "24")) # TRUE = Turkey (Med)
+
+### Summarising by key
+cols <- setdiff(colnames(SAU_data_6), c("data_layer", "scientific_name", "common_name", "functional_group", "scientific_name_corrected", "commercial_group", "fishing_sector", "catch_type", "reporting_status", "gear_type", "end_use_type", "tonnes", "landed_value", "fleet"))
+
+SAU_data <- SAU_data_6 %>% 
+  group_by(across(all_of(cols))) %>%
+  summarize(tonnes = sum(tonnes),
+            landed_value = sum(landed_value)) %>% 
+  mutate(source = "SAU") 
+
+table(is.na(SAU_data)) #FALSE
+
+
+### Saving tab-----------------------------------------------------------
+write.csv(SAU_data, file = "SAU_data_price.csv")
+
+
+```
+# COMBINING BOTH TABS SAU AND STECF--------------------------------------
+
+```{r}
+
+SAU_data <- read.csv(here("data/fisheries_data/SAU_data_price.csv"))
+STECF_data <- read.csv(here("data/fisheries_data/STECF_data.csv"))
+
+groups <- read.csv(here("data/fisheries_data/classification_commercial_interest.csv"), header = TRUE, sep = ";") %>%
+   select(species_name, group2, final_commercial_interest, species_id) %>%
+   rename(commercial_interest = final_commercial_interest) %>% 
+  
+  mutate(species_name = case_when(species_name == "Diplodussargussargus" ~ "Diplodussargus", TRUE ~ species_name))
+
+## Combining both tabs---------------------------------------------------
+# Rearranging tab
+SAU_data <- SAU_data %>%
+  ungroup() %>%
+  select(-c("group2", "species_id", "F"))
+
+
+# Joining
+combined_data <- full_join(SAU_data, STECF_data, by = intersect(colnames(SAU_data),colnames(STECF_data))) %>%
+  
+  left_join(groups, by = c("species_name")) %>%
+  
+  # transformation 1 row for 1 GSA
+  separate_rows(gsa, sep = ",") %>%
+  
+  # making sure there is no space in the characters
+  mutate(gsa = str_trim(gsa)) %>%
+  
+  # creating the id
+  mutate(gsa = paste0("GSA ", gsa)) %>% 
+  
+  mutate(price = landed_value / (tonnes * 1000))
+
+
+### Checking file--------------------------------------------------------
+# table(is.na(combined_data$area_name)) #FALSE
+# table(is.na(combined_data$fishing_entity)) #FALSE
+# table(is.na(combined_data$fishing_entity)) #FALSE
+# table(is.na(combined_data$species_name)) #FALSE
+# table(is.na(combined_data$fleet_v4)) #FALSE
+# table(is.na(combined_data$tonnes)) #FALSE
+# table(is.na(combined_data$landed_value)) #FALSE
+# table(is.na(combined_data$source)) #FALSE
+# table(is.na(combined_data$price)) #FALSE
+# table(is.na(combined_data$group2)) #FALSE
+# table(combined_data$tonnes == 0) #FALSE
+# table(combined_data$landed_value == 0) #FALSE
+# table(combined_data$price == 0) #FALSE
+
+
+```
+
+# FILTERING AND AVERAGING FINAL DATA-------------------------------------
+
+```{r}
+### First step: selecting years from 2006-2013 (Osmose model)
+
+years_osmose <- c("2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013")
+
+data_all_years <- combined_data
+
+
+### Extracting unique data (SAU or STECF) and common data----------------
+data_osmose <- combined_data %>%
+  
+  filter(year %in% years_osmose) %>% 
+  
+  ungroup() %>% 
+  
+  select(year, fishing_entity, species_name, fleet_v4, gsa, tonnes, landed_value, source, group2, commercial_interest, species_id, price) %>%
+  
+  # Creating key
+  unite("key", -tonnes, -landed_value, -price, -source, sep = "_", remove = FALSE) %>% 
+  
+  #summarising
+  group_by(key, year, fishing_entity, species_name, fleet_v4, gsa, source, group2, commercial_interest, species_id) %>% 
+  
+  summarise(landed_value = sum(landed_value),
+            tonnes = sum(tonnes),
+            price = landed_value / (tonnes * 1000))
+
+# SAU and STECF keys
+keys_SAU <- data_osmose %>% 
+  
+  filter(source == "SAU") %>% 
+  
+  distinct(key) %>% 
+  
+  pull(key)
+
+
+keys_STECF <- data_osmose %>% 
+  
+  filter(source == "STECF") %>% 
+  
+  distinct(key) %>% 
+  
+  pull(key)
+
+# Common keys between SAU and STECF
+common_keys_sau_stecf <- intersect(keys_SAU, keys_STECF)
+
+# Extracting unique keys data from data_osmose
+unique_data_sau_or_stecf <- data_osmose %>% 
+  
+  ungroup() %>% 
+  
+  filter(! key %in% common_keys_sau_stecf) %>% 
+  
+  select(-source)
+
+# Extracting common keys in data_osmose and averaging
+common_data_sau_stecf <- data_osmose %>% 
+  
+  ungroup() %>% 
+  
+  filter(key %in% common_keys_sau_stecf) %>% 
+  
+  group_by(across(all_of(setdiff(colnames(data_osmose), c("landed_value", "tonnes", "price", "source"))))) %>% 
+  
+  summarise(landed_value = mean(landed_value),
+            tonnes = mean(landed_value),
+            price = mean(price))
+    
+# table(is.na(common_data_sau_stecf)) # FALSE
+# table(common_data_sau_stecf$landed_value == 0) # FALSE
+# table(common_data_sau_stecf$tonnes == 0) # FALSE
+# table(common_data_sau_stecf$price == 0) # FALSE
+
+# Combining unique and common data---------------------------------------
+Price_data <- full_join(unique_data_sau_or_stecf,
+                        common_data_sau_stecf,
+                        by = colnames(unique_data_sau_or_stecf)) %>% 
+  
+  select(-key)
+
+# table(is.na(Price_data)) # FALSE
+# table(Price_data$landed_value == 0) # FALSE
+# table(Price_data$tonnes == 0) # FALSE
+# table(Price_data$price == 0) # FALSE
+
+
+# Saving tab-------------------------------------------------------------
+write.csv(Price_data, file = "Price_data_updated_without_outliers.csv", row.names = FALSE)
+   
+
+```
+
+
+# Classification species according to commercial importance
+```{r}
+
+Price_data_mean = Price_data %>%
+  group_by(species_name) %>%
+  summarize(landed_value = mean(landed_value)) %>%
+    arrange(desc(landed_value)) %>%
+  mutate(
+    cum_value = cumsum(landed_value),
+    cum_value_perc = cum_value / sum(landed_value)) %>%
+   mutate(commercial_class = case_when(
+      cum_value_perc <= 0.7 ~ "HC",
+      cum_value_perc >= 0.9 ~ "LC",
+      TRUE ~ "C"))
+  
+histogram <- ggplot(Price_data_mean, aes(x = landed_value, fill = commercial_class)) +
+  geom_histogram() 
+print(histogram)
+ggsave(here("figures/commercial_classification/classification_commercial_interest_histogram.png"), dpi = 300, width = 6, height = 6)
+
+
+# Joining tabs -----------------------------------------------------------------
+
+species = read.csv("D:/Documents/ETUDES/STAGE_article1/Article-MPA-CC_scenarios/data/classification_species.csv") %>%
+  rename(commercial_interest_old = commercial_interest) %>%
+  left_join(Price_data_mean, by = "species_name") %>%
+  mutate(commercial_class = case_when(is.na(commercial_class) ~ "NC",
+                                      TRUE ~ commercial_class))
+
+write.csv(species, "D:/Documents/ETUDES/STAGE_article1/Article-MPA-CC_scenarios/data/classification_species_commercial_class_4_Jan_2026.csv") 
+
+
+```
+
+# PLOT - standardized market price - Figure S3-1
+```{r}
+species_classif = read.csv(here("data/classification_species.csv"))
+
+price_data = read.csv(here("data/fisheries_data/Price_data_updated_without_outliers.csv")) %>%
+  mutate(species_name = case_when(species_name == "Diplodussargus" ~ "Diplodussargussargus",
+                                  TRUE ~ species_name)) %>%
+
+  mutate(fishing_entity = case_when(fishing_entity %in% c("North Cyprus", "South Cyprus") ~ "Cyprus",
+                                    fishing_entity == "Syrian Arab Republic" ~ "Syria",
+                                    is.na(fishing_entity) ~ "Unknown",
+                                    #fishing_entity %in% c("Mauritania", "Iceland", "Taiwan", "Korea (South)", "Unknown Fishing Country") ~ "Unknown or other",
+                                    TRUE ~ fishing_entity)) %>%
+  
+  group_by(species_name, gsa) %>%
+  summarize(price = mean(price, na.rm = T)) %>%
+  
+  # left_join
+  left_join(species_classif, by = "species_name")
+
+
+price_data_mean_species = price_data %>%
+  group_by(species_name, group_article1) %>%
+  summarize(price = mean(price)) %>%
+  ungroup() %>%
+  mutate(stand_price = price/max(price)) %>%
+  mutate(group_article1 = case_when(group_article1 %in% c("Large-sized pelagic fish", "Medium-sized pelagic fish") ~ "Medium & large pelagic",
+                                    group_article1 %in% c("Large-sized demersal fish", "Medium-sized demersal fish") ~ "Medium & large demersal",
+                                    group_article1 %in% c("Large-sized benthic fish", "Medium-sized benthic fish") ~ "Medium & large benthic",
+                                    group_article1 %in% c("Small-sized pelagic fish") ~ "Small pelagic",
+                                    group_article1 %in% c("Small-sized benthic fish") ~ "Small benthic",
+                                    group_article1 %in% c("Small-sized demersal fish") ~ "Small demersal",
+                           TRUE ~ group_article1))
+
+
+group_colors <- c(
+  "Small demersal" = "#8c510a",        # Brown from BrBG
+  "Cephalopod" = "#bf812d",    # Turquoise-green from BrBG
+  "Crustacean" = "#dfc27d",     # Light tan
+  "Small pelagic" = "#f6e8c3",        # Soft green
+  "Small benthic" = "#c7eae5",
+  "Medium & large benthic" = "#80cdc1",
+  "Medium & large demersal" = "#35978f",
+  "Medium & large pelagic" = "#01665e"
+)
+
+price_rank_size <- ggplot(price_data_mean_species) +
+  geom_bar(
+    aes(
+      y = reorder(species_name, stand_price),
+      x = stand_price,
+      fill = group_article1
+    ),
+    stat = "identity"
+  ) +
+  scale_fill_manual(
+    values = group_colors,
+    name = "Group"
+  ) +
+
+  labs(
+    x = "Standardized Price",
+    y = "Species Name",
+    title = "Ranking of Species by Landing Value per kg"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+print(price_rank_size)
+ggsave(here("figures/species_market_price/FigS3_1_rank_species_by_landing_value_kg_groups.png"), dpi = 300, width = 8, height = 10)
+
+```
+
