@@ -11,3 +11,7 @@ To run the analyses:
  - Open the .Rproj file in RStudioRun and run the main file Main.Rmd.
 If you are not able to download data directory automatically from Main.Rmd, download it manually from the zenodo repository DOI and place it at the root of the repository.
  - Run the scripts in the code/figures_manuscript to make the figures
+
+For info on the MPA scenarios: see [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16734084.svg)](https://doi.org/10.5281/zenodo.16734084)
+
+
