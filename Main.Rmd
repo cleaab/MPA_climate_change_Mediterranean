@@ -13,9 +13,9 @@ rm(list=ls())
 #-----------------Loading packages-------------------
 
 # List of required packages
-pkgs <- c("tidyverse", "here", "cowplot", "sf", "RColorBrewer", "ggpubr",
+pkgs <- c("tidyverse", "here", "cowplot", "sf", "ggpubr",
           "raster", "terra", "osmose", "ncdf4", "fields", "vegan", 
-          "heatmaply", "scales", "RColorBrewer", "ggcorrplot", "landscapemetrics", "zenodor")
+          "heatmaply", "scales", "RColorBrewer", "zenodor")
 
 # Install CRAN packages (excluding special cases)
 cran_pkgs <- setdiff(pkgs, c("osmose", "zenodoR"))
@@ -40,7 +40,7 @@ invisible(lapply(pkgs, require, character.only = TRUE))
 # 1.2. Check data folder is in the root directory of the repository and download from Zenodo if missing
 ```{r}
 # Define settings
-data_folder <- "data"
+data_folder <- "data-mpa-CC-paper"
 repo_root <- here::here()
 data_path <- as.character(file.path(repo_root, data_folder))
 
@@ -53,8 +53,8 @@ if (!dir.exists(data_path)) {
   if(!file.exists("content")) { 
   # Download all files from the Zenodo record
     message("Downloading from Zenodo... Please wait")
-  wanted_folder <- zenodor::zen_list_files(record_id = "14039492")[1]
-  zenodor::zen_download_files(record_id = "14039492", path = ".", files = wanted_folder)
+  wanted_folder <- zenodor::zen_list_files(record_id = "18545814")[1]
+  zenodor::zen_download_files(record_id = "18545814", path = ".", files = wanted_folder)
   file_path <- file.path(repo_root, "content")
   }
 
@@ -68,123 +68,38 @@ if (!dir.exists(data_path)) {
 if(dir.exists(data_path)){message("Data folder successfully unzipped")} else {stop("Data folder still missing. Check the contents of the Zenodo archive.")}
     
 ```
-
-
-# 1.3. Loading osmose config files for fishing mortality and species names
-
+# Check model configuration is in the root directory and download from zenodo if missing
 ```{r}
-# import classification of species by groups
-vertical_distrib = read.csv(here("data/vertical_distribution_species.csv")) %>%
-  dplyr::select(species_name, group) %>%
-  rownames_to_column("species_id") %>%
-  mutate(species_id = as.numeric(species_id) - 1)
+# Define settings
+data_folder <- "osmose-med-articleMPA-CC"
+repo_root <- here::here()
+data_path <- as.character(file.path(repo_root, data_folder))
 
-groups = unique(vertical_distrib$group)
-species_id = vertical_distrib$species_id
+# If data folder is missing, use zenodor to download
 
-# Define parameters
-Step = 30 # number of MPA coverage increments from 1 to 30%
-NbofYears = 60 # averaged number of years from OSMOSE
-Nbofreps = 30 # averaged number of replicates from OSMOSE as the model is stochastic
-pas = 62 # number of OSMOSE-MED cells corresponding to 1% of the model grid composed of 6229 cells
+# Download if data folder doesn't exist
+if (!dir.exists(data_path)) {
+  message("Data folder not found. Attempting to download from Zenodo or to unzip zenodo folder")
+
+  if(!file.exists("content")) { 
+  # Download all files from the Zenodo record
+    message("Downloading from Zenodo... Please wait")
+  wanted_folder <- zenodor::zen_list_files(record_id = "18545814")[2]
+  zenodor::zen_download_files(record_id = "18545814", path = ".", files = wanted_folder)
+  file_path <- file.path(repo_root, "content")
+  }
+
+  if(file.exists("content")) {
+    message("Data folder successfully downloaded")
+    unzip(file_path, exdir = repo_root)
+    }
+    
+  } 
+
+if(dir.exists(data_path)){message("Data folder successfully unzipped")} else {stop("Data folder still missing. Check the contents of the Zenodo archive.")}
+  
 ```
 
-# 1.4. MPA scenarios name and files and fishing redistribution strategies names
-```{r}
-lit.scenarios.name <- c("Mazor scenario 8",
-                    "Mazor scenario 9",
-                    "Micheli",
-                    "Existing network")
-
-random.scenarios.name <- c("Random 11",
-                    "Random 12",
-                    "Random 13",
-                    "Random 14",
-                    "Random 15",
-                    "Random 16",
-                    "Random 17",
-                    "Random 18",
-                    "Random 19",
-                    "Random 20",
-		                "EEZ-conservation 1",
-		                "EEZ-conservation 2",
-	                  "EEZ-conservation 3",
-                    "EEZ-conservation 4",
-                    "EEZ-conservation 5",
-                    "EEZ-conservation 6",
-                    "EEZ-conservation 7",
-                    "EEZ-conservation 8",
-                    "EEZ-conservation 9",
-                    "EEZ-conservation 10")
-
-Fishing_scenario_name = c("Fishing-the-line", "Proportional by GSA", "Uniform by GSA")
-Fishing_scenario = c("Fishing-the-line", "GSA-prop", "GSA-uniform")
-
-MPA_scenarios_name <- c("S5-Mazor GFCM",
-                    "S6-Mazor SAUP",
-                    "S4-Micheli",
-                    "S1-Current")
-
-lit.mpa.mask.dir <- c(here("data/MPA_scenarios/Mazor_scenario_8/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Mazor_scenario_9/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Micheli/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Existing_network/csv_gpkg_files"))
-
-
-random.mpa.mask.dir <- c(here("data/MPA_scenarios/Random/rep11/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep12/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep13/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep14/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep15/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep16/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep17/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep18/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep19/csv_gpkg_files"),
-                       here("data/MPA_scenarios/Random/rep20/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep1/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep2/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep3/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep4/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep5/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep6/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep7/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep8/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep9/csv_gpkg_files"),
-                       here("data/MPA_scenarios/EEZ-conservation/rep10/csv_gpkg_files"))
-
-```
-
-# 1.5. Load palettes for plots
-```{r}
-mpa_colors <- c("Existing network" = "gold", 
-                "Random 11" = "gray60", 
-                "Random 12" = "gray60",
-                "Random 13" = "gray60",
-                "Random 14" = "gray60",
-                "Random 15" = "gray60",
-                "Random 16" = "gray60",
-                "Random 17" = "gray60",
-                "Random 18" = "gray60",
-                "Random 19" = "gray60",
-                "Random 20" = "gray60",
-
-                "EEZ-conservation 1" = "black", 
-                "EEZ-conservation 2" = "black", 
-                "EEZ-conservation 3" = "black", 
-                "EEZ-conservation 4" = "black", 
-                "EEZ-conservation 5" = "black", 
-                "EEZ-conservation 6" = "black", 
-                "EEZ-conservation 7" = "black", 
-                "EEZ-conservation 8" = "black", 
-                "EEZ-conservation 9" = "black", 
-                "EEZ-conservation 10" = "black", 
-
-                "Micheli" = "darkorange", 
-                "Mazor scenario 8" = "darkslateblue", 
-                "Mazor scenario 9" = "darkorchid")
-
-
-```
 
 
 # Load Med grid GSA 
@@ -265,21 +180,6 @@ Med_grid_GSA_EEZ_df = Med_grid_EEZ_df  %>%
                                   TRUE ~ "Land")) %>%
   st_as_sf()
 
-```
-
-# Load functions that allow to upload data needed to create all figures
-```{r}
-load_multiple_csv <- function(folder_path) {
-  file_list <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
-  data_list <- lapply(file_list, read.csv, stringsAsFactors = FALSE)
-  return(data_list)
-}
-
-tbl_fread <- function(output.Folder, pattern){
-  files = list.files(output.Folder, pattern, full.names = TRUE) %>% 
-    map_df(~fread(.)) %>%
-    bind_rows()
-}
 ```
 
 ## MAKE FIGURES
