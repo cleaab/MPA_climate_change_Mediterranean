@@ -1,9 +1,9 @@
 # B1. LFI
 pas = 62
 
-LFI_current = read.csv(here("data/model_outputs/LFI_with_sd_among_reps_NoCC_GSA-prop_11-07-2023.csv")) 
+LFI_current = read.csv(here("data-mpa-CC-paper/model_outputs/LFI_with_sd_among_reps_NoCC_GSA-prop_11-07-2023.csv")) 
 
-LFI_future = read.csv(here("data/model_outputs/LFI_with_sd_among_reps_CC_2100_GSA-prop_11-07-2023.csv"))
+LFI_future = read.csv(here("data-mpa-CC-paper/model_outputs/LFI_with_sd_among_reps_CC_2100_GSA-prop_11-07-2023.csv"))
 
 LFI_current_lit = LFI_current %>%
   filter(scenario %in% c("Micheli", "Mazor scenario 8", "Mazor scenario 9", "Existing network")) %>%
@@ -186,7 +186,7 @@ LFI_Med_future_present <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
 # ylim(0.25, 0.43)
 
-
+print(LFI_Med_future_present)
 ggsave(here("figures/LFI/LFI_current_future_Med.png"), dpi = 600, height = 6, width = 6)
 
 
@@ -241,7 +241,7 @@ LFI_inside_future_present <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
   ylim(0.25, 0.43)
 
-
+print(LFI_inside_future_present)
 ggsave(here("figures/LFI/LFI_current_future_inside_MPAs.png"), dpi = 600, height = 6, width = 6)
 
 
@@ -296,4 +296,5 @@ LFI_outside_future_present <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
   ylim(0.25, 0.43)
 
+print(LFI_outside_future_present)
 ggsave(here("figures/LFI/LFI_current_future_outside_MPAs.png"), dpi = 600, height = 6, width = 6)
