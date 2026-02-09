@@ -594,8 +594,10 @@ Lmax = Lmax_present_nompa %>%
   left_join(species_classif, by = "species_id") %>%
   filter(significative == "yes") %>%
   filter(! species_id %in% c(0,1,2)) %>%
-  mutate(species_name = fct_reorder(species_name, diff_L95))  # <-- this line
-
+  mutate(species_name = case_when(species_name == "Etrumeusteres" ~ "Etrumeusgolanii",
+                                  TRUE ~ species_name)) %>%
+  mutate(species_name = fct_reorder(species_name, diff_L95))   # <-- this line
+  
 table(Lmax$significative)
 table(Lmax$change_category)
 
@@ -605,7 +607,7 @@ ggplot(Lmax) +
   geom_bar(aes(x = diff_L95, y = factor(species_name), fill = change_category), stat="identity") +
   labs(x = "Difference in Lmax (cm)", y = " ")
 
-ggsave(here("figures/Lmax_updated/Change_Lmax_future_present.png"), dpi =300, width = 10, height = 10)
+ggsave(here("figures/Lmax_updated/FigS4_2_Change_Lmax_future_present.png"), dpi =300, width = 10, height = 10)
 
 
 ggplot(Lmax) +
