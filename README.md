@@ -1,6 +1,6 @@
 # MPA_climate_change_Mediterranean
 
-This repository contains data and code used to obtain results of the paper Abello et al. (202?) - Assessing the potential of marine protected areas to mitigate climate change impacts in the Mediterranean Sea submitted in Global Change Biology.
+This repository contains data and code used to obtain results of the paper Abello et al. (202?) - Assessing the potential of marine protected areas to mitigate climate change impacts in the Mediterranean Sea submitted to Global Change Biology.
 
 Model code and configuration used for running the scenarios are accessible on zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18545815.svg)](https://doi.org/10.5281/zenodo.18545815)
 
