@@ -3,14 +3,14 @@ library(here)
 library(ncdf4)
 library(sf)
 # Load csfd# Load countries shapefile
-worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
+worldbounds = st_read(here("data-mpa-CC-paper/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
 worldbounds_3035 = st_transform(worldbounds, 3035)
 
-nc = nc_open(here("data/model_outputs/spatial_nompa/Yield_nompa_scenario_CC.nc"))
+nc = nc_open(here("data-mpa-CC-paper/model_outputs/spatial_nompa/Yield_nompa_scenario_CC.nc"))
 yield_nompa_future <- ncvar_get(nc, varid = "Catches")
 yield_nompa_future <- apply(yield_nompa_future, c(1,2,3), mean, na.rm = T) # mean over reps
 
-nc = nc_open(here("data/model_outputs/spatial_nompa/Yield_nompa_scenario_noCC.nc"))
+nc = nc_open(here("data-mpa-CC-paper/model_outputs/spatial_nompa/Yield_nompa_scenario_noCC.nc"))
 yield_nompa_present <- ncvar_get(nc, varid = "Catches")
 yield_nompa_present <- apply(yield_nompa_present, c(1,2,3), mean, na.rm = T) # mean over reps
 
@@ -20,7 +20,7 @@ position_categories = c("Pelagic", "Demersal", "Benthic")
 for (v in position_categories){
   
   # Highly commercial
-  species_classif = read.csv(here("data/classification_species_commercial_class_4_Jan_2026.csv")) %>%
+  species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
     filter(! species_id %in% c(0,1,2)) %>%
     filter(commercial_class %in% c("HC", "C")) %>%
     filter(vertical_position %in% v)
@@ -102,7 +102,7 @@ for (v in position_categories){
   )
   
   # Highly commercial
-  species_classif = read.csv(here("data/classification_species_commercial_class_4_Jan_2026.csv")) %>%
+  species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
     filter(! species_id %in% c(0,1,2)) %>%
     filter(commercial_class %in% c("LC", "NC")) %>%
     filter(vertical_position %in% v)
