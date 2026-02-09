@@ -1,7 +1,7 @@
 # B2d. Trophic level of the community weighted by the proportion of biomass of each specie
 
 # import classification of species by groups
-vertical_distrib = read.csv(here("data/vertical_distribution_species.csv")) %>%
+vertical_distrib = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
   dplyr::select(species_name, group) %>%
   rownames_to_column("species_id") %>%
   mutate(species_id = as.numeric(species_id) - 1)
@@ -9,10 +9,10 @@ vertical_distrib = read.csv(here("data/vertical_distribution_species.csv")) %>%
 vertical_distrib_noamphihaline = vertical_distrib %>%
   filter(! species_id %in% c(0,1,2))
 
-TL_community_current = read.csv(here("data/model_outputs/TL_community/TL_community_NoCC_GSA-prop_11-07-2023.csv")) %>%
+TL_community_current = read.csv(here("data-mpa-CC-paper/model_outputs/TL_community/TL_community_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(! species_name %in% c("Alosaalosa", "Alosafallax", "Anguillaanguilla"))
 
-Biomass_prop_current = read.csv(here("data/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Biomass_prop_current = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-yield) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
@@ -219,6 +219,7 @@ TL_community_Med_future_present <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
 
 
+print(TL_community_Med_future_present)
 ggsave(here("figures/TL_community/TL_community_current_future_weighted_with_biomass_10pct.png"), dpi = 600, height = 6, width = 6)
 
 
