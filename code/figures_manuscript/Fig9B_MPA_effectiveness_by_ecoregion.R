@@ -1,7 +1,7 @@
 #Plot maps - Figure 9B (average across 10 replicate S3 (EEZ) MPA scenarios)
 
 mpa_coverage = 10
-B_ecoregions_all_groups_all_reps = st_read(here(paste0("data/model_outputs/spatial_comparison_ecoregions_mpa_", mpa_coverage, "_with_geom.gpkg")))
+B_ecoregions_all_groups_all_reps = st_read(here(paste0("data-mpa-CC-paper/model_outputs/spatial_comparison_ecoregions_mpa_", mpa_coverage, "_with_geom.gpkg")))
 
 Impact_MPA = B_ecoregions_all_groups_all_reps %>%
   st_drop_geometry() %>%
