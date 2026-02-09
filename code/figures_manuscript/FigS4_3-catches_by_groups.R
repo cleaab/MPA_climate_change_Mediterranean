@@ -1,4 +1,3 @@
-rm(list=ls())
 library(ggplot2)
 library(dplyr)
 library(cowplot)
@@ -6,10 +5,10 @@ library(here)
 
 pas = 62
 
-Catches_current = read.csv(here("data/model_outputs/Catches_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Catches_current = read.csv(here("data-mpa-CC-paper/model_outputs/Catches_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa.coverage < 11)
 
-Catches_future = read.csv(here("data/model_outputs/Catches_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Catches_future = read.csv(here("data-mpa-CC-paper/model_outputs/Catches_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa.coverage < 11)
 
 
@@ -211,7 +210,7 @@ plot_list[["legend"]] <- cowplot::plot_grid(shared_legend)
 
 # ---- Combine into a 3 x 4 grid ----
 final_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 4)
-
+print(final_plot)
 # ---- Save the plot ----
 #ggsave(here::here(paste0("figures/Catches_by_groups_Med/Catches_combined_legend_bottom_right_all_groups_for_paper.png")),
 #       plot = final_plot, dpi = 600, height = 14, width = 14)
