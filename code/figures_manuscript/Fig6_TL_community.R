@@ -87,10 +87,10 @@ TL_community_current_EEZ = TL_community_weighted_current %>%
 
 # Future scenario ----
 
-TL_community_future = read.csv(here("data/model_outputs/TL_community/TL_community_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+TL_community_future = read.csv(here("data-mpa-CC-paper/model_outputs/TL_community/TL_community_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(! species_name %in% c("Alosaalosa", "Alosafallax", "Anguillaanguilla"))
 
-Biomass_prop_future = read.csv(here("data/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Biomass_prop_future = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-yield) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
