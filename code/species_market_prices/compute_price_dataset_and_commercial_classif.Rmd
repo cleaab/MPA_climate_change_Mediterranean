@@ -16,13 +16,13 @@ library(here)
 
 ```{r}
 ### Importing landings data------------------------------------------------
-STECF_lgs_2002_2010 <- read.csv(here("data/fisheries_data/STECF_2011_landings_2002_2010.csv"), header = TRUE, sep = ',') %>% 
+STECF_lgs_2002_2010 <- read.csv(here("data-mpa-CC-paper/fisheries_data/STECF_2011_landings_2002_2010.csv"), header = TRUE, sep = ',') %>% 
   mutate(value = gsub(" ", "", value),
          value = as.numeric(value)) #value was character
   
-STECF_lgs_2008_2014 <- read.csv(here("data/fisheries_data/STECF_2015_landings_2008_2014.csv"), header = TRUE, sep = ',')
+STECF_lgs_2008_2014 <- read.csv(here("data-mpa-CC-paper/fisheries_data/STECF_2015_landings_2008_2014.csv"), header = TRUE, sep = ',')
 
-STECF_lgs_2013_2022 <- read.csv(here("data/fisheries_data/STECF_2023_landings_2013_2022.csv"), header = TRUE, sep = ',') %>% 
+STECF_lgs_2013_2022 <- read.csv(here("data-mpa-CC-paper/fisheries_data/STECF_2023_landings_2013_2022.csv"), header = TRUE, sep = ',') %>% 
   mutate(year_publication = 2023)
 #first year is the file publication and other years represent the period recorded in the file
 
@@ -32,12 +32,12 @@ summary(STECF_lgs_2013_2022)
 
 ### Selection of species that are in Osmose & commercial-----------------
 # Vector of Osmose commercial species
-species_OSMOSE_MED <- read.csv(here("data/fisheries_data/species_OSMOSE_MED.csv"), header = TRUE, sep = ',') %>% 
+species_OSMOSE_MED <- read.csv(here("data-mpa-CC-paper/fisheries_data/species_OSMOSE_MED.csv"), header = TRUE, sep = ',') %>% 
   
   rename(scientific_name = species_name)
 
 
-species_code_F <- read.csv(here("data/fisheries_data/cl_fi_species_groups.csv"), header = TRUE, sep = ',') %>% 
+species_code_F <- read.csv(here("data-mpa-CC-paper/fisheries_data/cl_fi_species_groups.csv"), header = TRUE, sep = ',') %>% 
   
   rename(species_code = X3A_Code) %>% 
   
@@ -476,53 +476,53 @@ write.csv(STECF_data, file = "STECF_data.csv")
 
 ```{r}
 
-Albania <- read.csv(here("data/fisheries_data/SAU EEZ 8 v50-1 Albania.csv"), header = TRUE, 
+Albania <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 8 v50-1 Albania.csv"), header = TRUE, 
                     sep = ',')
-Algeria <- read.csv(here("data/fisheries_data/SAU EEZ 12 v50-1 Algeria.csv"), header = TRUE, 
+Algeria <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 12 v50-1 Algeria.csv"), header = TRUE, 
                     sep = ',')
-Croatia <- read.csv(here("data/fisheries_data/SAU EEZ 191 v50-1 Croatia.csv"), header = TRUE, 
+Croatia <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 191 v50-1 Croatia.csv"), header = TRUE, 
                     sep = ',')
-Cyprus_North <- read.csv(here("data/fisheries_data/SAU EEZ 197 v50-1 Cyprus (North).csv"), 
+Cyprus_North <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 197 v50-1 Cyprus (North).csv"), 
                          header = TRUE, sep = ',')
-Cyprus_South <- read.csv(here("data/fisheries_data/SAU EEZ 198 v50-1 Cyprus (South).csv"), 
+Cyprus_South <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 198 v50-1 Cyprus (South).csv"), 
                          header = TRUE, sep = ',')
-Greece <- read.csv(here("data/fisheries_data/SAU EEZ 300 v50-1 Greece.csv"), header = TRUE, 
+Greece <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 300 v50-1 Greece.csv"), header = TRUE, 
                    sep = ',')
-Italy <- read.csv(here("data/fisheries_data/SAU EEZ 380 v50-1 Italy.csv"), header = TRUE, 
+Italy <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 380 v50-1 Italy.csv"), header = TRUE, 
                   sep = ',')
-Lebanon <- read.csv(here("data/fisheries_data/SAU EEZ 422 v50-1 Lebanon.csv"), header = TRUE, 
+Lebanon <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 422 v50-1 Lebanon.csv"), header = TRUE, 
                     sep = ',')
-Libya <- read.csv(here("data/fisheries_data/SAU EEZ 434 v50-1 Libya.csv"), header = TRUE, 
+Libya <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 434 v50-1 Libya.csv"), header = TRUE, 
                   sep = ',')
-Malta <- read.csv(here("data/fisheries_data/SAU EEZ 470 v50-1 Malta.csv"), header = TRUE, 
+Malta <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 470 v50-1 Malta.csv"), header = TRUE, 
                   sep = ',')
-Syria <- read.csv(here("data/fisheries_data/SAU EEZ 760 v50-1 Syria.csv"), header = TRUE, 
+Syria <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 760 v50-1 Syria.csv"), header = TRUE, 
                   sep = ',')
-Tunisia <- read.csv(here("data/fisheries_data/SAU EEZ 788 v50-1 Tunisia.csv"), header = TRUE, 
+Tunisia <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 788 v50-1 Tunisia.csv"), header = TRUE, 
                     sep = ',')
-Turkey <- read.csv(here("data/fisheries_data/SAU EEZ 793 v50-1 Turkey.csv"), header = TRUE, 
+Turkey <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 793 v50-1 Turkey.csv"), header = TRUE, 
                    sep = ',')
-Montenegro <- read.csv(here("data/fisheries_data/SAU EEZ 891 v50-1 Montenegro.csv"), header = TRUE,
+Montenegro <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 891 v50-1 Montenegro.csv"), header = TRUE,
                        sep = ',')
-Corsica <- read.csv(here("data/fisheries_data/SAU EEZ 899 v50-1 Corsica.csv"), header = TRUE, 
+Corsica <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 899 v50-1 Corsica.csv"), header = TRUE, 
                     sep = ',')
-Crete <- read.csv(here("data/fisheries_data/SAU EEZ 900 v50-1 Crete.csv"), header = TRUE, 
+Crete <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 900 v50-1 Crete.csv"), header = TRUE, 
                   sep = ',')
-Sicily <- read.csv(here("data/fisheries_data/SAU EEZ 901 v50-1 Sicily.csv"), header = TRUE, 
+Sicily <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 901 v50-1 Sicily.csv"), header = TRUE, 
                    sep = ',')
-Sardinia <- read.csv(here("data/fisheries_data/SAU EEZ 902 v50-1 Sardinia.csv"), header = TRUE, 
+Sardinia <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 902 v50-1 Sardinia.csv"), header = TRUE, 
                      sep = ',')
-Balearic <- read.csv(here("data/fisheries_data/SAU EEZ 903 v50-1 Balearic.csv"), header = TRUE, 
+Balearic <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 903 v50-1 Balearic.csv"), header = TRUE, 
                      sep = ',')
-France <- read.csv(here("data/fisheries_data/SAU EEZ 918 v50-1 France.csv"), header = TRUE, 
+France <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 918 v50-1 France.csv"), header = TRUE, 
                    sep = ',')
-Egypt <- read.csv(here("data/fisheries_data/SAU EEZ 933 v50-1 Egypt.csv"), header = TRUE, 
+Egypt <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 933 v50-1 Egypt.csv"), header = TRUE, 
                   sep = ',')
-Israel <- read.csv(here("data/fisheries_data/SAU EEZ 939 v50-1 Israel.csv"), header = TRUE, 
+Israel <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 939 v50-1 Israel.csv"), header = TRUE, 
                    sep = ',')
-Morocco <- read.csv(here("data/fisheries_data/SAU EEZ 947 v50-1 Morocco.csv"), header = TRUE, 
+Morocco <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 947 v50-1 Morocco.csv"), header = TRUE, 
                     sep = ',')
-Spain <- read.csv(here("data/fisheries_data/SAU EEZ 962 v50-1 Spain.csv"), header = TRUE, 
+Spain <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU EEZ 962 v50-1 Spain.csv"), header = TRUE, 
                   sep = ',')
 
 EEZ <- list(Albania, Algeria, Croatia, Cyprus_North, Cyprus_South,
@@ -1307,8 +1307,8 @@ write.csv(SAU_data, file = "SAU_data_price.csv")
 
 ```{r}
 
-SAU_data <- read.csv(here("data/fisheries_data/SAU_data_price.csv"))
-STECF_data <- read.csv(here("data/fisheries_data/STECF_data.csv"))
+SAU_data <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU_data_price.csv"))
+STECF_data <- read.csv(here("data-mpa-CC-paper/fisheries_data/STECF_data.csv"))
 
 groups <- read.csv(here("data/fisheries_data/classification_commercial_interest.csv"), header = TRUE, sep = ";") %>%
    select(species_name, group2, final_commercial_interest, species_id) %>%
@@ -1478,22 +1478,22 @@ ggsave(here("figures/commercial_classification/classification_commercial_interes
 
 # Joining tabs -----------------------------------------------------------------
 
-species = read.csv("D:/Documents/ETUDES/STAGE_article1/Article-MPA-CC_scenarios/data/classification_species.csv") %>%
+species = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
   rename(commercial_interest_old = commercial_interest) %>%
   left_join(Price_data_mean, by = "species_name") %>%
   mutate(commercial_class = case_when(is.na(commercial_class) ~ "NC",
                                       TRUE ~ commercial_class))
 
-write.csv(species, "D:/Documents/ETUDES/STAGE_article1/Article-MPA-CC_scenarios/data/classification_species_commercial_class_4_Jan_2026.csv") 
+write.csv(species, here("data-mpa-CC-paper/classification_species_commercial_class.csv")) 
 
 
 ```
 
 # PLOT - standardized market price - Figure S3-1
 ```{r}
-species_classif = read.csv(here("data/classification_species.csv"))
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv"))
 
-price_data = read.csv(here("data/fisheries_data/Price_data_updated_without_outliers.csv")) %>%
+price_data = read.csv(here("data-mpa-CC-paper/fisheries_data/Price_data_updated_without_outliers.csv")) %>%
   mutate(species_name = case_when(species_name == "Diplodussargus" ~ "Diplodussargussargus",
                                   TRUE ~ species_name)) %>%
 
@@ -1523,6 +1523,7 @@ price_data_mean_species = price_data %>%
                                     group_article1 %in% c("Small-sized demersal fish") ~ "Small demersal",
                            TRUE ~ group_article1)) %>%
   mutate(species_name = case_when(species_name == "Etrumeusteres" ~ "Etrumeusgolanii",
+                                  species_name == "Sauridaundosquamis" ~ "Sauridalessepsianus",
                                   TRUE ~ species_name)) # correct name for species
 
 
@@ -1554,7 +1555,7 @@ price_rank_size <- ggplot(price_data_mean_species) +
   labs(
     x = "Standardized Price",
     y = "Species Name",
-    title = "Ranking of Species by Landing Value per kg"
+    title = ""
   ) +
   theme_minimal() +
   theme(legend.position = "right")
