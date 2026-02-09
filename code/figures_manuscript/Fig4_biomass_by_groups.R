@@ -1,9 +1,13 @@
-rm(list=ls())
 library(tidyverse)
 library(sf)
 library(ncdf4)
 library(here)
 library(osmose)
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+library(here)
+
 
 # A3b. Biomass by groups - Barplots - all species
 lit.scenarios.name <- c("Mazor scenario 8",
@@ -48,10 +52,10 @@ legend_labels <- c("S1-Current", "S2-Random basin", "S3-Random EEZ", "S4-Micheli
 
 
 ####
-Biomass_current = read.csv(here("data/model_outputs/Biomass_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Biomass_current = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa.coverage < 11)
 
-Biomass_future = read.csv(here("data/model_outputs/Biomass_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Biomass_future = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa.coverage < 11)
 
 pas = 62
@@ -189,11 +193,6 @@ B_NoMPA = Biomass_lit %>%
 # Entire Med Sea -------------------------------------
 
 
-library(ggplot2)
-library(dplyr)
-library(cowplot)
-library(here)
-
 plot_list <- list()
 groups <- unique(Biomass_lit$group)
 
@@ -268,6 +267,7 @@ plot_list[["legend"]] <- cowplot::plot_grid(shared_legend)
 # ---- Combine into a 3 x 4 grid ----
 final_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 4)
 
+print(final_plot)
 # ---- Save the plot ----
 ggsave(here::here(paste0("figures/Biomass_by_groups_Med/Biomass_combined_legend_bottom_right_all_groups_for_paper_v2.png")),
        plot = final_plot, dpi = 600, height = 14, width = 14)
