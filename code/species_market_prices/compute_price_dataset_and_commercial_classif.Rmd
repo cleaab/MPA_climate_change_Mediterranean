@@ -1521,7 +1521,9 @@ price_data_mean_species = price_data %>%
                                     group_article1 %in% c("Small-sized pelagic fish") ~ "Small pelagic",
                                     group_article1 %in% c("Small-sized benthic fish") ~ "Small benthic",
                                     group_article1 %in% c("Small-sized demersal fish") ~ "Small demersal",
-                           TRUE ~ group_article1))
+                           TRUE ~ group_article1)) %>%
+  mutate(species_name = case_when(species_name == "Etrumeusteres" ~ "Etrumeusgolanii",
+                                  TRUE ~ species_name)) # correct name for species
 
 
 group_colors <- c(
