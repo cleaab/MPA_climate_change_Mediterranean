@@ -1,6 +1,6 @@
 #Total biomass increase in the current and future periods up to 10% (regrouping random scenarios for visual):
 
-Biom_present <- read.csv(here("data/model_outputs/Total_biomass_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Biom_present <- read.csv(here("data-mpa-CC-paper/model_outputs/Total_biomass_NoCC_GSA-prop_11-07-2023.csv")) %>%
   rename(tot.biomass.present = tot.biomass,
          sd.tot.biomass.present = sd.tot.biomass) %>%
   dplyr::select(-relative_biom, -relative_biom_sd, -min, -max) %>%
@@ -10,7 +10,7 @@ Biom_present$biomass_before_MPAs = Biom_present$tot.biomass.present[Biom_present
 Biom_present$biomass_change_with_MPAs_present = (Biom_present$tot.biomass.present - Biom_present$biomass_before_MPAs)/Biom_present$biomass_before_MPAs * 100
 Biom_present$biomass_diff_with_MPAs_present = (Biom_present$tot.biomass.present - Biom_present$biomass_before_MPAs)
 
-Biom_future <- read.csv(here("data/model_outputs/Total_biomass_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Biom_future <- read.csv(here("data-mpa-CC-paper/model_outputs/Total_biomass_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   rename(tot.biomass.future = tot.biomass,
          sd.tot.biomass.future = sd.tot.biomass) %>%
   dplyr::select(-relative_biom, -relative_biom_sd, -min, -max) %>%
