@@ -1,16 +1,16 @@
 # B2c. Trophic level of landings weighted by the proportion of catch of each specie - HC_C species
 # All species (for manuscript text) ---
 fig_name = "All_species"
-species_classif = read.csv(here("data/classification_species_commercial_class_4_Jan_2026.csv")) %>%
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
   filter(! species_id %in% c(0,1,2))
 
 species_name_selected = species_classif$species_name
 species_id_selected = species_classif$species_id
 
-TL_landings_current = read.csv(here("data/model_outputs/TL_landings/TL_landings_NoCC_GSA-prop_11-07-2023.csv")) %>%
+TL_landings_current = read.csv(here("data-mpa-CC-paper/model_outputs/TL_landings/TL_landings_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(species_name %in% species_name_selected)
 
-Yield_prop_current = read.csv(here("data/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Yield_prop_current = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-biomass) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
@@ -85,10 +85,10 @@ TL_landings_current_EEZ = TL_landings_weighted_current %>%
 
 # Future scenario ----
 
-TL_landings_future = read.csv(here("data/model_outputs/TL_landings/TL_landings_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+TL_landings_future = read.csv(here("data-mpa-CC-paper/model_outputs/TL_landings/TL_landings_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(species_name %in% species_name_selected)
 
-Yield_prop_future = read.csv(here("data/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Yield_prop_future = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-biomass) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
@@ -231,17 +231,17 @@ print(TL_landings_Med_future_present_all_species)
 
 # Commercial species ------
 fig_name = "Species of high commercial interest"
-species_classif = read.csv(here("data/classification_species_commercial_class_4_Jan_2026.csv")) %>%
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
   filter(commercial_class %in% c("HC", "C")) %>%
   filter(! species_id %in% c(0,1,2))
 
 species_name_selected = species_classif$species_name
 species_id_selected = species_classif$species_id
 
-TL_landings_current = read.csv(here("data/model_outputs/TL_landings/TL_landings_NoCC_GSA-prop_11-07-2023.csv")) %>%
+TL_landings_current = read.csv(here("data-mpa-CC-paper/model_outputs/TL_landings/TL_landings_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(species_name %in% species_name_selected)
 
-Yield_prop_current = read.csv(here("data/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
+Yield_prop_current = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_NoCC_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-biomass) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
@@ -316,10 +316,10 @@ TL_landings_current_EEZ = TL_landings_weighted_current %>%
 
 # Future scenario ----
 
-TL_landings_future = read.csv(here("data/model_outputs/TL_landings/TL_landings_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+TL_landings_future = read.csv(here("data-mpa-CC-paper/model_outputs/TL_landings/TL_landings_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(species_name %in% species_name_selected)
 
-Yield_prop_future = read.csv(here("data/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+Yield_prop_future = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_yield_by_species_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   dplyr::select(-biomass) %>%
   rename(species_id = sp_id,
          mpa_coverage = mpa.coverage) %>%
@@ -487,7 +487,7 @@ print(TL_landings_Med_future_present_HC_C)
 
 # Low commercial species ---------------------
 fig_name = "Species of minor commercial interest"
-species_classif = read.csv(here("data/classification_species_commercial_class_4_Jan_2026.csv")) %>%
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
   filter(commercial_class %in% c("LC", "NC")) %>%
   filter(! species_id %in% c(0,1,2))
 
@@ -715,5 +715,5 @@ TL_catch <- ggarrange(TL_landings_Med_future_present_HC_C, TL_landings_Med_futur
 
 print(TL_catch)
 #ggsave(here("figures/TL_landings_HC_C_LC_relative_change_for_paper.png"), dpi = 600, height = 6, width = 10)
-ggsave(here("figures/TL_landings_HC_C_LC_relative_change_for_paper_v3_updated_classif_4_Jan_2026.png"), dpi = 600, height = 6, width = 10)
+ggsave(here("figures/Fig8C-TL_landings_HC_C_LC_relative_change_for_paper_v3_updated_classif_4_Jan_2026.png"), dpi = 600, height = 6, width = 10)
 
