@@ -5,7 +5,7 @@ library(sf)
 
 
 # Load countries shapefile
-worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
+worldbounds = st_read(here("data-mpa-CC-paper/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
 worldbounds_3035 = st_transform(worldbounds, 3035)
 
 # Define bounding box around the Mediterranean region in EPSG:3035
@@ -16,16 +16,16 @@ med_bounds <- st_intersection(worldbounds_3035, med_bbox)
 
 
 
-nc = nc_open(here("data/model_outputs/spatial_nompa/Yield_nompa_scenario_CC.nc"))
+nc = nc_open(here("data-mpa-CC-paper/model_outputs/spatial_nompa/Yield_nompa_scenario_CC.nc"))
 yield_nompa_future <- ncvar_get(nc, varid = "Catches")
 yield_nompa_future <- apply(yield_nompa_future, c(1,2,3), mean, na.rm = T) # mean over reps
 
-nc = nc_open(here("data/model_outputs/spatial_nompa/Yield_nompa_scenario_noCC.nc"))
+nc = nc_open(here("data-mpa-CC-paper/model_outputs/spatial_nompa/Yield_nompa_scenario_noCC.nc"))
 yield_nompa_present <- ncvar_get(nc, varid = "Catches")
 yield_nompa_present <- apply(yield_nompa_present, c(1,2,3), mean, na.rm = T) # mean over reps
 
 # Yy species  ------
-species_classif = read.csv(here("data/classification_species.csv")) %>%
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
   filter(! species_id %in% c(0,1,2))
 
 sp_name = "all_species_no_amphihaline"
@@ -66,15 +66,6 @@ sp_Y_present = sum(tot_yield_nompa_present, na.rm = T)
 Y_change = (sp_Y_future - sp_Y_present)/sp_Y_present * 100
 print(Y_change)
 
-# sp44 - M poutassou
-tot_yield_nompa_future = yield_nompa_future[1:190, 1:83, 51+1]
-sp_Y_future = sum(tot_yield_nompa_future, na.rm = T)
-
-tot_yield_nompa_present = yield_nompa_present[1:190, 1:83, 51+1]
-sp_Y_present = sum(tot_yield_nompa_present, na.rm = T)
-
-Y_change = (sp_Y_future - sp_Y_present)/sp_Y_present * 100
-print(Y_change)
 
 # All species
 tot_yield_nompa_future = yield_nompa_future[1:190, 1:83, species_id_list+1]
@@ -83,324 +74,76 @@ tot_yield_nompa_future = apply(tot_yield_nompa_future, c(1,2), sum)
 tot_yield_nompa_present = yield_nompa_present[1:190, 1:83, species_id_list+1]
 tot_yield_nompa_present = apply(tot_yield_nompa_present, c(1,2), sum)
 
-mpa_scenarios = c("Existing_network",
-                  "Micheli",
-                  "Mazor_scenario_8",
-                  "Mazor_scenario_9",
-                  "EEZ-conservation-rep1",
-                  "EEZ-conservation-rep2",
-                  "EEZ-conservation-rep3",
-                  "EEZ-conservation-rep4",
-                  "EEZ-conservation-rep5",
-                  "EEZ-conservation-rep6",
-                  "EEZ-conservation-rep7",
-                  "EEZ-conservation-rep8",
-                  "EEZ-conservation-rep9",
-                  "EEZ-conservation-rep10",
-                  "Random-rep11",
-                  "Random-rep12",
-                  "Random-rep13",
-                  "Random-rep14",
-                  "Random-rep15",
-                  "Random-rep16",
-                  "Random-rep17",
-                  "Random-rep18",
-                  "Random-rep19",
-                  "Random-rep20")
 
-for (mpa_scenario in mpa_scenarios){
-  nc = nc_open(here(paste0("data/model_outputs/spatial_mpa_10/CC_2100/", mpa_scenario, "/Yield_mpa_scenario.nc")))
-  yield_mpa_future <- ncvar_get(nc, varid = "Catches")
-  yield_mpa_future <- apply(yield_mpa_future, c(1,2,3), mean, na.rm = T) # mean over reps
-  tot_yield_mpa_future = yield_mpa_future[1:190, 1:83, species_id_list+1]
-  tot_yield_mpa_future = apply(tot_yield_mpa_future, c(1,2), sum)
+spatial_yield_file <- here(
+  paste0("data-mpa-CC-paper/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg")
+)
+
+if (file.exists(spatial_yield_file)) {
+  message("File exists — skipping: ", spatial_yield_file)
+} else {
+  mpa_scenarios = c("Existing_network",
+                    "Micheli",
+                    "Mazor_scenario_8",
+                    "Mazor_scenario_9",
+                    "EEZ-conservation-rep1",
+                    "EEZ-conservation-rep2",
+                    "EEZ-conservation-rep3",
+                    "EEZ-conservation-rep4",
+                    "EEZ-conservation-rep5",
+                    "EEZ-conservation-rep6",
+                    "EEZ-conservation-rep7",
+                    "EEZ-conservation-rep8",
+                    "EEZ-conservation-rep9",
+                    "EEZ-conservation-rep10",
+                    "Random-rep11",
+                    "Random-rep12",
+                    "Random-rep13",
+                    "Random-rep14",
+                    "Random-rep15",
+                    "Random-rep16",
+                    "Random-rep17",
+                    "Random-rep18",
+                    "Random-rep19",
+                    "Random-rep20")
   
-  tot_yield_mpa_future2 = tot_yield_mpa_future[,83:1]
-  tot_yield_mpa_future2_vect = as.vector(tot_yield_mpa_future2)
-  
-  if (mpa_scenario == mpa_scenarios[1]){
-    Y_diff_all_scens = tot_yield_mpa_future2_vect
+  for (mpa_scenario in mpa_scenarios){
+    nc = nc_open(here(paste0("data-mpa-CC-paper/model_outputs/spatial_mpa_10/CC_2100/", mpa_scenario, "/Yield_mpa_scenario.nc")))
+    yield_mpa_future <- ncvar_get(nc, varid = "Catches")
+    yield_mpa_future <- apply(yield_mpa_future, c(1,2,3), mean, na.rm = T) # mean over reps
+    tot_yield_mpa_future = yield_mpa_future[1:190, 1:83, species_id_list+1]
+    tot_yield_mpa_future = apply(tot_yield_mpa_future, c(1,2), sum)
     
-  } else{
-    Y_diff_all_scens = cbind(Y_diff_all_scens, tot_yield_mpa_future2_vect)
+    tot_yield_mpa_future2 = tot_yield_mpa_future[,83:1]
+    tot_yield_mpa_future2_vect = as.vector(tot_yield_mpa_future2)
+    
+    if (mpa_scenario == mpa_scenarios[1]){
+      Y_diff_all_scens = tot_yield_mpa_future2_vect
+      
+    } else{
+      Y_diff_all_scens = cbind(Y_diff_all_scens, tot_yield_mpa_future2_vect)
+    }
   }
+  
+  nscen = seq(1, 24, 1)
+  colnames(Y_diff_all_scens) = paste0("scen", nscen)
+  
+  
+  Spatial_yield_diff_all_scenarios = Med_grid_GSA_EEZ_df %>%
+    mutate(cell_ID = as.numeric(cell_ID)) %>%
+    arrange(cell_ID) 
+  
+  Spatial_yield_diff = cbind(Spatial_yield_diff_all_scenarios, Y_diff_all_scens)
+  
+  st_write(Spatial_yield_diff, here(paste0("data-mpa-CC-paper/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg")))
+  
+  
 }
 
-nscen = seq(1, 24, 1)
-colnames(Y_diff_all_scens) = paste0("scen", nscen)
 
 
-Spatial_yield_diff_all_scenarios = Med_grid_GSA_EEZ_df %>%
-  mutate(cell_ID = as.numeric(cell_ID)) %>%
-  arrange(cell_ID) 
+Spatial_yield = st_read(here(paste0("data-mpa-CC-paper/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg")))
 
-Spatial_yield_diff = cbind(Spatial_yield_diff_all_scenarios, Y_diff_all_scens)
-
-st_write(Spatial_yield_diff, here(paste0("data/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg")))
-
-Spatial_yield = st_read(here(paste0("data/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg")))
-
-
-# Compute row-wise mean while ignoring geometry
-Spatial_yield$Y_mpa_future <- rowMeans(st_drop_geometry(Spatial_yield)[, 10:33], na.rm = TRUE)
-
-# Convert mpa scenarios colnames numeric (handle potential factors/characters)
-Spatial_yield[paste0("scen", 1:24)] <- lapply(Spatial_yield[paste0("scen", 1:24)], function(x) as.numeric(as.character(x)))
-
-# Compute row-wise mean while ignoring geometry
-Spatial_yield$scen_mean <- rowMeans(st_drop_geometry(Spatial_yield)[, paste0("scen", 1:24)], na.rm = TRUE)
-
-tot_yield_nompa_future2 = tot_yield_nompa_future[,83:1]
-tot_yield_nompa_future2_vect = as.vector(tot_yield_nompa_future2)
-
-Spatial_yield$Y_nompa_future = tot_yield_nompa_future2_vect
-
-tot_yield_nompa_present2 = tot_yield_nompa_present[,83:1]
-tot_yield_nompa_present2_vect = as.vector(tot_yield_nompa_present2)
-
-Spatial_yield$Y_nompa_present = tot_yield_nompa_present2_vect
-
-### -----
-# Plot difference by GSA
-Spatial_yield = Spatial_yield %>%
-  
-  mutate(delta_scen1 = (scen1 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen2 = (scen2 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen3 = (scen3 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen4 = (scen4 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen5 = (scen5 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen6 = (scen6 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen7 = (scen7 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen8 = (scen8 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen9 = (scen9 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen10 = (scen10 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen11 = (scen11 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen12 = (scen12 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen13 = (scen13 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen14 = (scen14 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen15 = (scen15 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen16 = (scen16 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen17 = (scen17 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen18 = (scen18 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen19 = (scen19 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen20 = (scen20 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen21 = (scen21 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen22 = (scen22 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen23 = (scen23 - Y_nompa_present)/Y_nompa_present * 100,
-         delta_scen24 = (scen24 - Y_nompa_present)/Y_nompa_present * 100) %>%
-  
-  mutate(diff_Y = Y_nompa_future - Y_nompa_present,
-         delta_Y = (Y_nompa_future - Y_nompa_present)/Y_nompa_present * 100,
-         diff_Y_mpa = scen_mean - Y_nompa_present,
-         delta_Y_mpa = (scen_mean - Y_nompa_present)/Y_nompa_present * 100) %>%
-  
-  mutate(delta_Y = case_when(VALUE == 0 & Y_nompa_present == 0 & Y_nompa_future == 0 ~ 0,
-                             TRUE ~ delta_Y)) %>%
-  
-  mutate(diff_delta = delta_Y_mpa - delta_Y)
-
-# Total basin:
-Y_future_MPA = sum(Spatial_yield$scen_mean, na.rm = T)
-print(Y_future_MPA)
-Y_baseline_NoMPA = sum(Spatial_yield$Y_nompa_present, na.rm = T)
-print(Y_baseline_NoMPA)
-Y_future_NoMPA = sum(Spatial_yield$Y_nompa_future, na.rm = T)
-print(Y_future_NoMPA)
-
-delta_Ind_futureMPA = (Y_future_MPA - Y_baseline_NoMPA)/Y_baseline_NoMPA * 100
-print(delta_Ind_futureMPA)
-delta_Ind_futureNoMPA = (Y_future_NoMPA - Y_baseline_NoMPA)/Y_baseline_NoMPA * 100
-print(delta_Ind_futureNoMPA)
-
-diff = delta_Ind_futureMPA - delta_Ind_futureNoMPA
-print(diff)
-
-# Compute row-wise mean while ignoring geometry
-Spatial_yield$mean_delta_scen <- rowMeans(st_drop_geometry(Spatial_yield)[, paste0("delta_scen", 1:24)], na.rm = TRUE)
-
-# Compute standard deviation accross scenarios
-Spatial_yield$sd_delta_scen <- apply(
-  st_drop_geometry(Spatial_yield)[, paste0("delta_scen", 1:24)],
-  1,
-  sd,
-  na.rm = TRUE
-)
-
-#### RELATIVE CHANGE - calculate average Y accross scenarios by GSA and then calculate delta Y on the average
-
-Spatial_yield = Spatial_yield %>%
-  mutate(delta_Y_mpa = case_when(VALUE == 0 & is.na(delta_Y_mpa) ~ 0,
-                                 TRUE ~ delta_Y_mpa),
-         delta_Y = case_when(VALUE == -99 ~ NA,
-                             TRUE ~ delta_Y),
-         diff_delta = case_when(VALUE == 0 & is.na(diff_delta) ~ 0,
-                                TRUE ~ diff_delta)) # so no NANs in the Med and NAN in other seas
-
-all_vals <- c(Spatial_yield$delta_Y,
-              Spatial_yield$delta_Y_mpa)
-
-common_min <- min(all_vals, na.rm = TRUE)
-common_max <- max(all_vals, na.rm = TRUE)
-
-# Plot 1: MPA effect catch change
-map_effect_yield <- ggplot(Spatial_yield) +
-  geom_sf(aes(fill = delta_Y), color = NA) +  # remove border lines for a cleaner look
-  geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
-  
-  # scale_fill_gradient2(
-  #   low = "deepskyblue4",     
-  #   mid = "lightyellow",      
-  #   high = "darkred",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # )
-
-scale_fill_gradient2(
-  low = "deepskyblue4",
-  mid = "lightyellow",
-  high = "darkred",
-  midpoint = 0,
-  limits = c(-30, 30),
-  oob = scales::squish,
-  name = expression(Delta~Y~"(%)"),
-  breaks = c(-30, -15, 0, 15, 30),
-  labels = c("≤ -30%", -15, 0, 15, "≥ 30%")) +
-
-
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = "Relative change in total yield between current and future periods",
-    fill = expression(Delta~Y~"(%)")
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5),
-    legend.position = "right",
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank()
-  )
-
-# Save the plot
-ggsave(
-  here(paste0("figures/spatial_yield/total_yield/Delta_Y_future_present_30_limit.png")),
-  plot = map_effect_yield,
-  dpi = 300,
-  width = 10,
-  height = 6
-)
-
-# Plot 2: catch change before MPAs
-map_effect_yield <- ggplot(Spatial_yield) +
-  geom_sf(aes(fill = delta_Y_mpa), color = NA) +  # remove border lines for a cleaner look
-  geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
-  
-  scale_fill_gradient2(
-    low = "deepskyblue4",
-    mid = "lightyellow",
-    high = "darkred",
-    midpoint = 0,
-    limits = c(-30, 30),
-    oob = scales::squish,
-    name = expression(Delta~Y~"(%)"),
-    breaks = c(-30, -15, 0, 15, 30),
-    labels = c("≤ -30%", -15, 0, 15, "≥ 30%")) +
-  
-  # scale_fill_gradient2(
-  #   low = "deepskyblue4",     
-  #   mid = "lightyellow",      
-  #   high = "darkred",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # ) +
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = paste0("Change in yield with climate change and 10% MPAs - ", sp_name) ,
-    fill = expression(Delta~Y~"(%)")
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5),
-    legend.position = "right",
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank()
-  )
-
-# Save the plot
-ggsave(
-  here("figures/spatial_yield/total_yield/Delta_Y_with_MPAs_all_scens_30_limit.png"),
-  plot = map_effect_yield,
-  dpi = 300,
-  width = 10,
-  height = 6
-)
-
-# Plot 3: diff delta
-common_min = min(Spatial_yield$diff_delta, na.rm = T)
-common_max = max(Spatial_yield$diff_delta, na.rm = T)
-
-map_effect_yield <- ggplot(Spatial_yield) +
-
-  geom_sf(aes(fill = diff_delta), color = NA) +  # remove border lines for a cleaner look
-  geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
-  
-  # scale_fill_gradient2(
-  #   low = "darkgreen",     
-  #   mid = "lightyellow",      
-  #   high = "purple",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # ) 
-scale_fill_gradient2(
-  low = "darkgreen",
-  mid = "lightyellow",
-  high = "purple",
-  midpoint = 0,
-  limits = c(-10, 10),
-  oob = scales::squish,
-  name = expression(Delta~Y~"(%)"),
-  breaks = c(-10, -5, 0, 5, 10),
-  labels = c("≤ -10%", -5, 0, 5, "≥ 10%")) +
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = "MPA impact of yield change",
-    fill = expression(Delta~Y~"(%)")
-  ) +
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = paste0("Diff delta - ", sp_name),
-    fill = expression(Delta~Y~"(%)")
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5),
-    legend.position = "right",
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank()
-  )
-
-# Save the plot
-ggsave(
-  here(paste0("figures/spatial_yield/total_yield/MPA_effect_total_yield_all_scens.png")),
-  plot = map_effect_yield,
-  dpi = 300,
-  width = 10,
-  height = 6
-)
 
 #### First - mean S2 & S3 and then average 6 scenarios -------------------------
 
@@ -429,7 +172,7 @@ mpa_scenarios = c("Existing_network",
                   "Random-rep19",
                   "Random-rep20")
 
-Spatial_yield = st_read(here(paste0("data/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg"))) 
+Spatial_yield = st_read(here(paste0("data-mpa-CC-paper/model_outputs/spatial_mpa_10/CC_2100/spatial_yield_all_scenarios_mpa10_", sp_name, ".gpkg"))) 
 
 tot_yield_nompa_future2 = tot_yield_nompa_future[,83:1]
 tot_yield_nompa_future2_vect = as.vector(tot_yield_nompa_future2)
@@ -509,6 +252,8 @@ Spatial_yield_all_scenarios = Spatial_yield %>%
             delta_Y_mpa = mean(delta_Y_mpa_6, na.rm = T),
             diff_delta = mean(diff_delta_6, na.rm = T)) %>%
   ungroup() 
+
+
   
 Spatial_catch_all_scenarios = Med_grid_GSA_EEZ_df %>%
   mutate(cell_ID = as.numeric(cell_ID)) %>%
@@ -535,16 +280,7 @@ common_max <- max(all_vals, na.rm = TRUE)
 map_effect_yield <- ggplot(Spatial_catch_all_scenarios) +
   geom_sf(aes(fill = delta_Y), color = NA) +  # remove border lines for a cleaner look
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
-  
-  # scale_fill_gradient2(
-  #   low = "deepskyblue4",     
-  #   mid = "lightyellow",      
-  #   high = "darkred",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # )
+
   
   scale_fill_gradient2(
     low = "deepskyblue4",
@@ -574,6 +310,7 @@ map_effect_yield <- ggplot(Spatial_catch_all_scenarios) +
     axis.title = element_blank()
   )
 
+print(map_effect_yield)
 # Save the plot
 ggsave(
   here(paste0("figures/spatial_yield/total_yield/Delta_Y_future_present_30_limit_mean_6_scens.png")),
@@ -598,16 +335,7 @@ map_effect_yield_mpa <- ggplot(Spatial_catch_all_scenarios) +
     name = expression(Delta~Y~"(%)"),
     breaks = c(-30, -15, 0, 15, 30),
     labels = c("≤ -30%", -15, 0, 15, "≥ 30%")) +
-  
-  # scale_fill_gradient2(
-  #   low = "deepskyblue4",     
-  #   mid = "lightyellow",      
-  #   high = "darkred",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # ) +
+
   coord_sf(expand = FALSE) +  # remove whitespace around the map
   labs(
     title = paste0("Change in yield with climate change and 10% MPAs - ", sp_name) ,
@@ -624,6 +352,7 @@ map_effect_yield_mpa <- ggplot(Spatial_catch_all_scenarios) +
     axis.title = element_blank()
   )
 
+print(map_effect_yield_mpa)
 # Save the plot
 ggsave(
   here("figures/spatial_yield/total_yield/Delta_Y_with_MPAs_all_scens_30_limit_mean_6_scens.png"),
@@ -642,15 +371,7 @@ map_effect_mpa_yield <- ggplot(Spatial_catch_all_scenarios) +
   geom_sf(aes(fill = diff_delta), color = NA) +  # remove border lines for a cleaner look
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
-  # scale_fill_gradient2(
-  #   low = "darkgreen",     
-  #   mid = "lightyellow",      
-  #   high = "purple",         
-  #   midpoint = 0,
-  #   trans = "pseudo_log",
-  #   limits = c(common_min, common_max),
-  #   name = expression(Delta~Y~"(%)")  # nicer label formatting
-  # ) 
+
   scale_fill_gradient2(
     low = "darkgreen",
     mid = "lightyellow",
@@ -682,6 +403,7 @@ map_effect_mpa_yield <- ggplot(Spatial_catch_all_scenarios) +
     axis.title = element_blank()
   )
 
+print(map_effect_mpa_yield)
 # Save the plot
 ggsave(
   here(paste0("figures/spatial_yield/total_yield/MPA_effect_total_yield_all_scens_mean_6_scens.png")),
@@ -690,88 +412,5 @@ ggsave(
   width = 10,
   height = 6
 )
-
-
-#### AYSOLUTE CHANGES
-all_vals <- c(Spatial_yield$diff_Y,
-              Spatial_yield$diff_Y_mpa)
-
-common_min <- min(all_vals, na.rm = TRUE)
-common_max <- max(all_vals, na.rm = TRUE)
-
-# Plot 1: MPA effect catch change
-map_effect_yield <- ggplot(Spatial_yield) +
-  geom_sf(aes(fill = diff_Y), color = NA) +  # remove border lines for a cleaner look
-  scale_fill_gradient2(
-    low = "deepskyblue4",     
-    mid = "lightyellow",      
-    high = "darkred",         
-    midpoint = 0,
-    trans = "pseudo_log",
-    limits = c(common_min, common_max),
-    name = expression(Delta~Y~"(tons)")  # nicer label formatting
-  ) +
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = paste0("Mean change in yield with climate change -", sp_name),
-    fill = expression(Delta~Y~"(tons)")
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5),
-    legend.position = "right",
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank()
-  )
-
-# Save the plot
-ggsave(
-  here("figures/spatial_yield/total_yield/Diff_Y_future_present_all_scens.png"),
-  plot = map_effect_yield,
-  dpi = 300,
-  width = 10,
-  height = 6
-)
-
-# Plot 2: catch change before MPAs
-map_effect_yield <- ggplot(Spatial_yield) +
-  geom_sf(aes(fill = diff_Y_mpa), color = NA) +  # remove border lines for a cleaner look
-  scale_fill_gradient2(
-    low = "deepskyblue4",     
-    mid = "lightyellow",      
-    high = "darkred",         
-    midpoint = 0,
-    trans = "pseudo_log",
-    limits = c(common_min, common_max),
-    name = expression(Delta~Y~"(tons)")  # nicer label formatting
-  ) +
-  coord_sf(expand = FALSE) +  # remove whitespace around the map
-  labs(
-    title = paste0("Change in yield with climate change and 10% MPAs - ", sp_name) ,
-    fill = expression(Delta~Y~"(tons)")
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5),
-    legend.position = "right",
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank()
-  )
-
-# Save the plot
-ggsave(
-  here("figures/spatial_yield/total_yield/Diff_Y_future_present_with_MPAs_all_scens.png"),
-  plot = map_effect_yield,
-  dpi = 300,
-  width = 10,
-  height = 6
-)
-
 
 
