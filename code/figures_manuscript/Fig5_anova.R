@@ -1,89 +1,21 @@
-lit.scenarios.name <- c("Mazor scenario 8",
-                        "Mazor scenario 9",
-                        "Micheli",
-                        "Existing network")
-
-random.scenarios.name <- c("Random 11",
-                           "Random 12",
-                           "Random 13",
-                           "Random 14",
-                           "Random 15",
-                           "Random 16",
-                           "Random 17",
-                           "Random 18",
-                           "Random 19",
-                           "Random 20",
-                           "EEZ-conservation 1",
-                           "EEZ-conservation 2",
-                           "EEZ-conservation 3",
-                           "EEZ-conservation 4",
-                           "EEZ-conservation 5",
-                           "EEZ-conservation 6",
-                           "EEZ-conservation 7",
-                           "EEZ-conservation 8",
-                           "EEZ-conservation 9",
-                           "EEZ-conservation 10")
-
-Fishing_scenario_name = c("Fishing-the-line", "Proportional by GSA", "Uniform by GSA")
-Fishing_scenario = c("Fishing-the-line", "GSA-prop", "GSA-uniform")
-
-MPA_scenarios_name <- c("S5-Mazor GFCM",
-                        "S6-Mazor SAUP",
-                        "S4-Micheli",
-                        "S1-Current")
-
-lit.mpa.mask.dir <- c(here("data/MPA_scenarios/Mazor_scenario_8/csv_gpkg_files"),
-                      here("data/MPA_scenarios/Mazor_scenario_9/csv_gpkg_files"),
-                      here("data/MPA_scenarios/Micheli/csv_gpkg_files"),
-                      here("data/MPA_scenarios/Existing_network/csv_gpkg_files"))
-
-
-random.mpa.mask.dir <- c(here("data/MPA_scenarios/Random/rep11/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep12/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep13/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep14/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep15/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep16/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep17/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep18/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep19/csv_gpkg_files"),
-                         here("data/MPA_scenarios/Random/rep20/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep1/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep2/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep3/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep4/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep5/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep6/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep7/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep8/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep9/csv_gpkg_files"),
-                         here("data/MPA_scenarios/EEZ-conservation/rep10/csv_gpkg_files"))
+rm(list=ls())
 
 # Calculate ANOVA - % of variance explained by CC and MPAs
-biomass_NoCC_GSAprop = read.csv(here("data/model_outputs/Biomass_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
+biomass_NoCC_GSAprop = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_bygroups_NoCC_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa == "Entire Mediterranean Sea") %>%
   mutate(climate = "Baseline")
 
-biomass_CC_GSAprop = read.csv(here("data/model_outputs/Biomass_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
+biomass_CC_GSAprop = read.csv(here("data-mpa-CC-paper/model_outputs/Biomass_bygroups_CC_2100_GSA-prop_11-07-2023.csv")) %>%
   filter(mpa == "Entire Mediterranean Sea") %>%
   mutate(climate = "Future")
 
 
-data_10pct = rbind(biomass_NoCC_GSAprop, biomass_CC_GSAprop) %>%
-  rename(MPA = scenario, species_group = group) %>%
-  filter(mpa.coverage == 10) %>%
-  mutate(biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
-  dplyr::select(-mpa, -x_scale, -mpa.coverage, -tot.biomass, -tot.biomass.ref) %>%
-  mutate(MPA = case_when(grepl("EEZ", MPA) ~ "EEZ-conservation",
-                         grepl("Random", MPA) ~ "Random",
-                         TRUE ~ MPA)) %>%
-  mutate(MPA = as.factor(MPA),
-         climate = as.factor(climate)) 
+# Figure 5 - MPA coverage increases between 0 and 30% for each species group
+data = rbind(biomass_NoCC_GSAprop, biomass_CC_GSAprop)
 
-summary(data_10pct)
+plot_list <- list()
+assump_checks <- data.frame()
 
-# Compute anova - climate, MPA scenarios at 10% coverage
-#species_groups = unique(data_10pct$species_group)
 species_groups <- c("Large-sized benthic fish", 
                     "Large-sized demersal fish", 
                     "Large-sized pelagic fish",
@@ -95,81 +27,6 @@ species_groups <- c("Large-sized benthic fish",
                     "Small-sized benthic fish",
                     "Small-sized demersal fish",
                     "Small-sized pelagic fish")
-
-for (i in species_groups){
-  data_10pct_sp_group = data_10pct %>%
-    filter(species_group == i)
-  mod = lm(biomass_change ~ climate * MPA, data=data_10pct_sp_group)
-  anova_result = anova(mod)
-  print(anova_result)
-  summary(mod)
-  
-  SS_term <- anova_result[,"Sum Sq"]
-  SS_total <- sum(SS_term)
-  pct_total <- 100 * SS_term / SS_total
-  print(pct_total)
-  
-  vars = c("climate", "MPA", "climate:MPA", "stochasticity")
-  
-  rel_var = data.frame(vars, pct_total)
-  rel_var$species_group = i
-  
-  if (i == species_groups[1]){
-    rel_var_all_groups = rel_var
-  } else{
-    rel_var_all_groups = rbind(rel_var_all_groups, rel_var)
-   
-  }
-}
-
-# Plot - relative effects
-
-my_order <- c("Large-sized pelagic fish", "Medium-sized pelagic fish", "Small-sized pelagic fish",
-              "Large-sized demersal fish", "Medium-sized demersal fish", "Small-sized demersal fish",
-              "Large-sized benthic fish", "Medium-sized benthic fish", "Small-sized benthic fish",
-              "Crustacean", "Cephalopod")
-
-rel_var_all_groups <- rel_var_all_groups %>%
-  mutate(species_group = factor(species_group, levels = my_order))
-
-# my_order <- c("stochasticity", "climate", "climate:MPA", "MPA")
-# 
-# rel_var_all_groups <- rel_var_all_groups %>%
-#   mutate(vars = factor(vars, levels = my_order))
-
-
-fill_cols <- c(
-  "stochasticity" = "grey80",
-  "MPA"           = "#009E73",  # bluish green
-  "climate"       = "#0072B2",  # blue
-  "climate:MPA"   = "#CC79A7"   # reddish purple (reads like a "mix")
-)
-
-ggplot(rel_var_all_groups,
-       aes(x = species_group, y = pct_total, fill = vars)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(x = "Species group", y = "% of total variance", fill = "Source") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggsave(here("figures/anova/pct_total_variance_by_species_groups.png"), dpi = 300, height = 5, width = 7)
-
-ggplot(rel_var_all_groups,
-       aes(x = pct_total, y = species_group, fill = vars)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(y = "", x = "% of total variance", fill = "Source") +
-  theme_bw() +
-  scale_fill_manual(values = fill_cols, breaks = names(fill_cols)) 
-  
-
-ggsave(here("figures/anova/pct_total_variance_by_species_groups_flipped.png"), dpi = 300, height = 5, width = 7)
-
-
-# Make plot where MPA coverage increases between 0 and 30% for each species group
-data = rbind(biomass_NoCC_GSAprop, biomass_CC_GSAprop)
-
-plot_list <- list()
-assump_checks <- data.frame()
 
 for (g in species_groups){
   
@@ -304,6 +161,7 @@ for (g in species_groups){
 plot_list[["legend"]] <- cowplot::plot_grid(shared_legend)
 
 final_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 4)
+print(final_plot)
 
 ggsave(here("figures/anova/pct_total_variance_by_mpa_coverage_all_groups.png"), dpi = 300, height = 14, width = 14)
 
