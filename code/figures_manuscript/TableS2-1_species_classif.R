@@ -10,6 +10,8 @@ Table_S2_1 = clusters %>%
   left_join(commercial_importance, by = "species_name") %>%
   mutate(commercial_cat = case_when(commercial_class %in% c("HC", "C") ~ "High",
                                     commercial_class == "LC" ~ "Minor",
-                                    TRUE ~ "None"))
+                                    TRUE ~ "None")) %>%
+  filter(!species_id %in% c(0,1,2,4, 10, 33, 54, 55, 64, 88, 93, 100)) %>% #removed anadromous/catadromous species
+  dplyr::select(-species_id)
 
 write.csv(Table_S2_1, here("data-mpa-CC-paper/Table_S2_1_species_list_updated.csv"))
