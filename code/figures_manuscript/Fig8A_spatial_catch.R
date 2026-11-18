@@ -24,7 +24,7 @@ nc = nc_open(here("data-mpa-CC-paper/model_outputs/spatial_nompa/Yield_nompa_sce
 yield_nompa_present <- ncvar_get(nc, varid = "Catches")
 yield_nompa_present <- apply(yield_nompa_present, c(1,2,3), mean, na.rm = T) # mean over reps
 
-# Yy species  ------
+# Load species  ------
 species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
   filter(! species_id %in% c(0,1,2))
 
@@ -36,8 +36,8 @@ species_name_list = species_classif$species_name
 length(species_id_list)
 print(species_name_list)
 
-# Calculate change 3 exotic species
-# sp29 - E teres
+# Calculate change Lessepsian species
+# sp29 - Etrumeus golanii
 tot_yield_nompa_future = yield_nompa_future[1:190, 1:83, 29+1]
 sp_Y_future = sum(tot_yield_nompa_future, na.rm = T)
 
@@ -46,6 +46,7 @@ sp_Y_present = sum(tot_yield_nompa_present, na.rm = T)
 
 Y_change = (sp_Y_future - sp_Y_present)/sp_Y_present * 100
 print(Y_change)
+
 # sp68 - S lessepsianus
 tot_yield_nompa_future = yield_nompa_future[1:190, 1:83, 68+1]
 sp_Y_future = sum(tot_yield_nompa_future, na.rm = T)
@@ -283,9 +284,9 @@ map_effect_yield <- ggplot(Spatial_catch_all_scenarios) +
 
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-30, 30),
     oob = scales::squish,
@@ -313,7 +314,7 @@ map_effect_yield <- ggplot(Spatial_catch_all_scenarios) +
 print(map_effect_yield)
 # Save the plot
 ggsave(
-  here(paste0("figures/spatial_yield/total_yield/Delta_Y_future_present_30_limit_mean_6_scens.png")),
+  here(paste0("figures/after_revision1/FINAL/Delta_Y_future_present_30_limit_mean_6_scens.png")),
   plot = map_effect_yield,
   dpi = 300,
   width = 10,
@@ -326,9 +327,9 @@ map_effect_yield_mpa <- ggplot(Spatial_catch_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-30, 30),
     oob = scales::squish,
@@ -355,7 +356,7 @@ map_effect_yield_mpa <- ggplot(Spatial_catch_all_scenarios) +
 print(map_effect_yield_mpa)
 # Save the plot
 ggsave(
-  here("figures/spatial_yield/total_yield/Delta_Y_with_MPAs_all_scens_30_limit_mean_6_scens.png"),
+  here("figures/after_revision1/FINAL/Delta_Y_with_MPAs_all_scens_30_limit_mean_6_scens.png"),
   plot = map_effect_yield_mpa,
   dpi = 300,
   width = 10,
@@ -406,7 +407,7 @@ map_effect_mpa_yield <- ggplot(Spatial_catch_all_scenarios) +
 print(map_effect_mpa_yield)
 # Save the plot
 ggsave(
-  here(paste0("figures/spatial_yield/total_yield/MPA_effect_total_yield_all_scens_mean_6_scens.png")),
+  here(paste0("figures/after_revision1/FINAL/MPA_effect_total_yield_all_scens_mean_6_scens.png")),
   plot = map_effect_mpa_yield,
   dpi = 300,
   width = 10,

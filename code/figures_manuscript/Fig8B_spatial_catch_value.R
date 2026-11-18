@@ -1,3 +1,4 @@
+# Load price dataset
 price_kg = read.csv(here("data-mpa-CC-paper/Price_data_updated_without_outliers.csv"))
 
 # LANDED VALUE - for all species by cell
@@ -402,9 +403,9 @@ map_catch_value <- ggplot(Spatial_catch_value_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-30, 30),
     oob = scales::squish,
@@ -431,7 +432,7 @@ map_catch_value <- ggplot(Spatial_catch_value_all_scenarios) +
 print(map_catch_value)
 # Save the plot
 ggsave(
-  here(paste0("figures/spatial_catch_value/Delta_V_without_MPAs_", sp_name, "_mean_6_scens.png")),
+  here(paste0("figures/after_revision1/FINAL/Delta_V_without_MPAs_", sp_name, "_mean_6_scens.png")),
   plot = map_catch_value,
   dpi = 300,
   width = 10,
@@ -444,9 +445,9 @@ map_catch_value_mpa <- ggplot(Spatial_catch_value_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-30, 30),
     oob = scales::squish,
@@ -473,7 +474,7 @@ map_catch_value_mpa <- ggplot(Spatial_catch_value_all_scenarios) +
 print(map_catch_value_mpa)
 # Save the plot
 ggsave(
-  here(paste0("figures/spatial_catch_value/Delta_V_with_MPAs_", sp_name, "_mean_6_scens.png")),
+  here(paste0("figures/after_revision1/FINAL/Delta_V_with_MPAs_", sp_name, "_mean_6_scens.png")),
   plot = map_catch_value_mpa,
   dpi = 300,
   width = 10,
@@ -522,7 +523,7 @@ scale_fill_gradient2(
 print(map_effect_mpas_catch_value)
 # Save the plot
 ggsave(
-  here(paste0("figures/spatial_catch_value/Diff_delta_V_with_MPAs_", sp_name, "_mean_6_scens.png")),
+  here(paste0("figures/after_revision1/FINAL/Diff_delta_V_with_MPAs_", sp_name, "_mean_6_scens.png")),
   plot = map_effect_mpas_catch_value,
   dpi = 300,
   width = 10,
