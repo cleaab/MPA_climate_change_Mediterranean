@@ -183,7 +183,7 @@ Med_grid_GSA_EEZ_df = Med_grid_EEZ_df  %>%
 ```
 
 ## MAKE FIGURES
-open codes in code/figures_manuscript
+open codes in code/figures_manuscript/v1_after_revision
 
 Figure 3: Biomass and functional evenness 
 - Run Fig3A_spatial_biomass.R
