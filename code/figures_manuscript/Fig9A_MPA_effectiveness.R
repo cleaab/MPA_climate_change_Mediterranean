@@ -1,5 +1,5 @@
-#Total biomass increase in the current and future periods up to 10% (regrouping random scenarios for visual):
 
+# Figure 9A
 Biom_present <- read.csv(here("data-mpa-CC-paper/model_outputs/Total_biomass_NoCC_GSA-prop_11-07-2023.csv")) %>%
   rename(tot.biomass.present = tot.biomass,
          sd.tot.biomass.present = sd.tot.biomass) %>%
@@ -35,9 +35,11 @@ B_delta_comparison_random = Biom_present %>%
   mutate(delta_change = biomass_change_with_MPAs_future - biomass_change_with_MPAs_present) %>%
   #filter(mpa.coverage < 11) %>%
   group_by(mpa.coverage) %>%
-  mutate(max = max(delta_change),
+  summarise(max = max(delta_change),
          mean = mean(delta_change),
-         min = min(delta_change))
+         min = min(delta_change)) %>%
+  ungroup() %>%
+  mutate(scenario = "Random")
 
 B_delta_comparison_random_EEZ = Biom_present %>%
   left_join(Biom_future, by = c("scenario", "mpa", "mpa.coverage")) %>%
@@ -46,39 +48,23 @@ B_delta_comparison_random_EEZ = Biom_present %>%
   mutate(delta_change = biomass_change_with_MPAs_future - biomass_change_with_MPAs_present) %>%
   #filter(mpa.coverage < 11) %>%
   group_by(mpa.coverage) %>%
-  mutate(max = max(delta_change),
+  summarise(max = max(delta_change),
          mean = mean(delta_change),
-         min = min(delta_change))
+         min = min(delta_change)) %>%
+  mutate(scenario = "Random-EEZ")
 
 
 mpa_colors <- c("Existing network" = "gold", 
-                "Random 11" = "gray60", 
-                "Random 12" = "gray60",
-                "Random 13" = "gray60",
-                "Random 14" = "gray60",
-                "Random 15" = "gray60",
-                "Random 16" = "gray60",
-                "Random 17" = "gray60",
-                "Random 18" = "gray60",
-                "Random 19" = "gray60",
-                "Random 20" = "gray60",
+                "Random" = "gray60", 
+  
                 
-                "EEZ-conservation 1" = "black", 
-                "EEZ-conservation 2" = "black", 
-                "EEZ-conservation 3" = "black", 
-                "EEZ-conservation 4" = "black", 
-                "EEZ-conservation 5" = "black", 
-                "EEZ-conservation 6" = "black", 
-                "EEZ-conservation 7" = "black", 
-                "EEZ-conservation 8" = "black", 
-                "EEZ-conservation 9" = "black", 
-                "EEZ-conservation 10" = "black", 
+                "Random-EEZ" = "black", 
                 
                 "Micheli" = "darkorange", 
                 "Mazor scenario 8" = "darkslateblue", 
                 "Mazor scenario 9" = "darkorchid")
 
-legend_scenarios <- c("Existing network", "Micheli", "Random 11", "Mazor scenario 8", "EEZ-conservation 1", "Mazor scenario 9")
+legend_scenarios <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "Random-EEZ", "Mazor scenario 9")
 
 group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "EEZ-scale conservation", "Mazor scenario 9")
 
@@ -87,29 +73,33 @@ legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM
 Delta_comparison_plot <- ggplot() +
   
 
-  geom_ribbon(data = B_delta_comparison_random_EEZ, aes(x = mpa.coverage, ymin = min, ymax = max), fill = "gray40", alpha = 0.5) +
-  geom_ribbon(data = B_delta_comparison_random, aes(x = mpa.coverage, ymin = min, ymax = max), fill = "gray80", alpha = 0.5) +
+  geom_ribbon(data = B_delta_comparison_random_EEZ, aes(x = mpa.coverage, ymin = min, ymax = max), fill="black", alpha = 0.3
+) +
+  geom_ribbon(data = B_delta_comparison_random, aes(x = mpa.coverage, ymin = min, ymax = max), fill="gray60", alpha = 0.3) +
   
-  geom_line(data = B_delta_comparison_random, aes(x = mpa.coverage, y = delta_change, col = scenario), lwd = 0.3, alpha=1) +
-  geom_line(data = B_delta_comparison_random_EEZ, aes(x = mpa.coverage, y = delta_change, col = scenario), lwd = 0.3, alpha=1) +
+  geom_line(data = B_delta_comparison_random, aes(x = mpa.coverage, y = mean, col = scenario), lwd = 0.8, alpha=1) +
+  geom_line(data = B_delta_comparison_random_EEZ, aes(x = mpa.coverage, y = mean, col = scenario), lwd = 0.8, alpha=1) +
   
   geom_line(data = B_delta_comparison, aes(x = mpa.coverage, y = delta_change, col = scenario), lwd = 0.8, alpha=1) +
   geom_line(data = B_delta_comparison, aes(x = mpa.coverage, y = 0), col = "black", lty = "dashed", lwd = 0.8, alpha=1) +
   
-  scale_linetype_manual(values = scenario) +  
-  scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
+  scale_colour_manual(name = "MPA scenario", values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
   scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) + 
- 
   labs(title= "Total biomass",
        subtitle = "A) Entire Mediterranean Sea",
        x ="MPA coverage (%)", y = "Change in MPA effectiveness (%)") +
 
   theme_bw() +
-  theme(plot.title = element_text(face = "bold"))
+  theme(legend.position = "bottom",
+        legend.text = element_text(size=12),
+        axis.title.x = element_text(size=12),
+        axis.title.y = element_text(size = 12),
+        plot.subtitle = element_text(size = 14),
+        plot.title = element_text(size = 16, face = "bold"))
 
 print(Delta_comparison_plot)
 
-ggsave(here("figures/impact_mpa_future_ecoregions/Efficiency_loss_MPA_future_30pct.png"), dpi = 300, height = 6, width = 6)
+ggsave(here("figures/after_revision1/FINAL/Fig9_MPA_effectiveness.png"), dpi = 300, height = 6, width = 6)
 
 # Are differences significative?  ------ yes for all coverage levels considering each MPA scenario as a pseudo-replicate
 

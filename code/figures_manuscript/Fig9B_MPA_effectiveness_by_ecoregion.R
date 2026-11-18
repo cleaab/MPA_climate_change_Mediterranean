@@ -1,4 +1,4 @@
-#Plot maps - Figure 9B (average across 10 replicate S3 (EEZ) MPA scenarios)
+# Figure 9B (average across 10 replicate S3 (EEZ) MPA scenarios)
 
 mpa_coverage = 10
 B_ecoregions_all_groups_all_reps = st_read(here(paste0("data-mpa-CC-paper/model_outputs/spatial_comparison_ecoregions_mpa_", mpa_coverage, "_with_geom.gpkg")))
@@ -59,13 +59,17 @@ plot_impact_diff_by_ecoregions <- ggplot() +
   labs(title = "Impact of MPA by ecoregion", x = "MPA efficiency (%)", y = "") +
   
   labs(title= "",
-       subtitle = "B) By ecoregion for a 10% MPA network",
+       subtitle = "B) By ecoregion \nfor a 10% MPA network",
        x = "Change in MPA effectiveness (%)") +
   
-  theme_minimal()
-
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    plot.subtitle = element_text(size = 14)
+  )
 print(plot_impact_diff_by_ecoregions)
 
-ggsave(here("figures/Figure9B_Impact_MPA_future_by_ecoregions.png"), dpi = 300, height = 6, width = 6)
+ggsave(here("figures/after_revision1/FINAL/Figure9B_Impact_MPA_future_by_ecoregions.png"), dpi = 300, height = 6, width = 6)
 
 
