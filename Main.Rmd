@@ -185,5 +185,35 @@ Med_grid_GSA_EEZ_df = Med_grid_EEZ_df  %>%
 ## MAKE FIGURES
 open codes in code/figures_manuscript
 
+Figure 3: Biomass and functional evenness 
+- Run Fig3A_spatial_biomass.R
+- Run Fig3B_spatial_functional_evenness_biomass.R
+- For combined figure: Fig3_biomass_feve_section_fig.R 
+
+Figure 4: Biomass by groups of species
+- Run Fig4_biomass_by_groups-NIS_native_log_pel_dem_ben.R
+
+Figure 5: Proportion of total variance in biomass change associated with climate, MPAs and their interaction
+- Run Fig5_variance_prop_species_groups.R
+
+Figure 6: LFI and TL community
+- Run Fig6_LFI_barplot.R
+- Run Fig6_TL_community_barplot.R
+- For combined figure: Fig6_LFI_TL_comm_barplot_fig.R
+
+Figure 7: Lmax
+- Run Fig7_Lmax_barplot_size_pel_dem_ben.R
+
+Figure 8: Catches, landed values and TL catch
+- Run Fig8A_spatial_catch.R
+- Run Fig8B_spatial_catch_value.R
+- Run Fig8C_TL_catch_barplot.R
+- For combined figure: Fig8_catch_section_fig_barplot.R
+
+Figure 9: MPA effectiveness
+- Run Fig9A_MPA_effectiveness.R
+- Run Fig9B_MPA_effectiveness_by_ecoregion.R
+- Run Fig9_MPA_effectivenness_combined_fig.R
+
 ## COMPUTE PRICE database
 open codes in code/species_market_prices
