@@ -18,7 +18,7 @@ if (file.exists(clusters_csv)) {
   message("File exists — skipping: ", clusters_csv)
 } else {
   
-  osmose_med_dir = here("osmose-med-articleMPA-CC/") 
+  osmose_med_dir = ("D:/Documents/OSMOSE/osmose-med-articleMPA-CC/") 
   
   # growth parameters
   OSMOSE_MED_Von_Bertalanffy_params_K = read.table(paste0(osmose_med_dir, "Config/osm_param-species.csv"), sep = ";", row.names = NULL, header= FALSE) %>%
@@ -625,15 +625,15 @@ feve_change_noCC_CC <- ggplot(Spatial_feve_all_scenarios) +
 
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
-    limits = c(-50, 50),
+    limits = c(-30, 30),
     oob = scales::squish,
     name = expression(Delta~Feve~"(%)"),
-    breaks = c(-50, -25, 0, 25, 50),
-    labels = c("≤ -50%", -25, 0, 25, "≥ 50%")) +
+    breaks = c(-30, -15, 0, 15, 30),
+    labels = c("≤ -30%", -15, 0, 15, "≥ 30%")) +
   
   
   coord_sf(expand = FALSE) +  # remove whitespace around the map
@@ -668,9 +668,9 @@ feve_change_noCC_CC_with_mpas <- ggplot(Spatial_feve_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-50, 50),
     oob = scales::squish,

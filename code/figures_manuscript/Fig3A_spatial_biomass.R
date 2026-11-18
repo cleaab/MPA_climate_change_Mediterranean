@@ -34,8 +34,8 @@ species_name_list = species_classif$species_name
 length(species_id_list)
 print(species_name_list)
 
-# Calculate change 3 exotic species
-# sp29 - E teres
+# Calculate change 4 Lessepsian species
+# sp29 - Etrumeus golanii
 tot_biomass_nompa_future = biomass_nompa_future[1:190, 1:83, 29+1]
 sp_B_future = sum(tot_biomass_nompa_future, na.rm = T)
 
@@ -44,7 +44,7 @@ sp_B_present = sum(tot_biomass_nompa_present, na.rm = T)
 
 B_change = (sp_B_future - sp_B_present)/sp_B_present * 100
 print(B_change)
-# sp68 - S lessepsianus
+# sp68 - Saurida lessepsianus
 tot_biomass_nompa_future = biomass_nompa_future[1:190, 1:83, 68+1]
 sp_B_future = sum(tot_biomass_nompa_future, na.rm = T)
 
@@ -54,7 +54,7 @@ sp_B_present = sum(tot_biomass_nompa_present, na.rm = T)
 B_change = (sp_B_future - sp_B_present)/sp_B_present * 100
 print(B_change)
 
-# sp97 - U. moluccensis
+# sp97 - Upeneus moluccensis
 tot_biomass_nompa_future = biomass_nompa_future[1:190, 1:83, 97+1]
 sp_B_future = sum(tot_biomass_nompa_future, na.rm = T)
 
@@ -64,6 +64,15 @@ sp_B_present = sum(tot_biomass_nompa_present, na.rm = T)
 B_change = (sp_B_future - sp_B_present)/sp_B_present * 100
 print(B_change)
 
+# sp87 - Stephanolepis diaspros
+tot_biomass_nompa_future = biomass_nompa_future[1:190, 1:83, 87+1]
+sp_B_future = sum(tot_biomass_nompa_future, na.rm = T)
+
+tot_biomass_nompa_present = biomass_nompa_present[1:190, 1:83, 97+1]
+sp_B_present = sum(tot_biomass_nompa_present, na.rm = T)
+
+B_change = (sp_B_future - sp_B_present)/sp_B_present * 100
+print(B_change) # 49.91%
 
 # All species
 tot_biomass_nompa_future = biomass_nompa_future[1:190, 1:83, species_id_list+1]
@@ -228,6 +237,7 @@ Spatial_biomass_all_scenarios = Spatial_biomass %>%
             diff_delta = mean(diff_delta_6, na.rm = T)) %>%
   ungroup()
 
+# Note: Med_grid_GSA_EEZ_df computed in Main.Rmd script as will serve for several figures
 Spatial_B_all_scenarios = Med_grid_GSA_EEZ_df %>%
   mutate(cell_ID = as.numeric(cell_ID)) %>%
   arrange(cell_ID) %>%
@@ -255,15 +265,15 @@ map_effect_biomass <- ggplot(Spatial_B_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
-    limits = c(-50, 50),
+    limits = c(-30, 30),
     oob = scales::squish,
     name = expression(Delta~B~"(%)"),
-    breaks = c(-50, -25, 0, 25, 50),
-    labels = c("≤ -50%", -25, 0, 25, "≥ 50%")) +
+    breaks = c(-30, -15, 0, 15, 30),
+    labels = c("≤ -30%", -15, 0, 15, "≥ 30%")) +
   
   
   coord_sf(expand = FALSE) +  # remove whitespace around the map
@@ -298,9 +308,9 @@ map_effect_biomass_with_mpas <- ggplot(Spatial_B_all_scenarios) +
   geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
   
   scale_fill_gradient2(
-    low = "deepskyblue4",
+    low = "darkred",
     mid = "lightyellow",
-    high = "darkred",
+    high = "deepskyblue4",
     midpoint = 0,
     limits = c(-50, 50),
     oob = scales::squish,
@@ -324,6 +334,7 @@ map_effect_biomass_with_mpas <- ggplot(Spatial_B_all_scenarios) +
   )
 
 print(map_effect_biomass_with_mpas)
+
 # Save the plot
 ggsave(
   here(paste0("figures/spatial_biomass/total_biomass/Delta_B_future_present_MPAs_all_scens_mean_6_scens.png")),
