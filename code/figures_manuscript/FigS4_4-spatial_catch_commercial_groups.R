@@ -135,9 +135,9 @@ for (sp_name in sp_names){
     geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
     
     scale_fill_gradient2(
-      low = "deepskyblue4",
+      low = "darkred",
       mid = "lightyellow",
-      high = "darkred",
+      high = "deepskyblue4",
       midpoint = 0,
       limits = c(-50, 50),
       oob = scales::squish,
@@ -162,8 +162,15 @@ for (sp_name in sp_names){
     )
   
   # Save the plot
+  # ggsave(
+  #   here(paste0("figures/spatial_catch/FigS5/Delta_Y_without_MPAs_", sp_name, ".png")),
+  #   plot = map_effect_biomass,
+  #   dpi = 300,
+  #   width = 10,
+  #   height = 6
+  # )
   ggsave(
-    here(paste0("figures/spatial_catch/FigS5/Delta_Y_without_MPAs_", sp_name, ".png")),
+    here(paste0("figures/after_revision1/Delta_Y_without_MPAs_", sp_name, ".png")),
     plot = map_effect_biomass,
     dpi = 300,
     width = 10,
@@ -241,9 +248,9 @@ for (sp_name in sp_names){
     geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
     
     scale_fill_gradient2(
-      low = "deepskyblue4",
+      low = "darkred",
       mid = "lightyellow",
-      high = "darkred",
+      high = "deepskyblue4",
       midpoint = 0,
       limits = c(-50, 50),
       oob = scales::squish,

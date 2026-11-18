@@ -9,7 +9,7 @@ spatial_yield_change = map_effect_yield +
 
 spatial_yield_change_MPAs = map_effect_mpa_yield +
   theme(plot.title = element_blank()) +
-  labs(subtitle = "MPA mitigation potential") +
+  labs(subtitle = "MPA mitigation capacity") +
   theme(plot.subtitle = element_text(size = 11, hjust = 0))
 
 catch_change <- ggarrange(spatial_yield_change, spatial_yield_change_MPAs, 
@@ -30,7 +30,7 @@ spatial_landed_value_change = map_catch_value +
 
 spatial_landing_value_change_MPAs = map_effect_mpas_catch_value +
   theme(plot.title = element_blank()) +
-  labs(subtitle = "MPA mitigation potential") +
+  labs(subtitle = "MPA mitigation capacity") +
   theme(plot.subtitle = element_text(size = 11, hjust = 0))  
 
 landed_value_change <- ggarrange(spatial_landed_value_change, spatial_landing_value_change_MPAs, 
@@ -54,3 +54,6 @@ fig8_catch <- ggarrange(fig8AB,
                          nrow = 2)
 ggsave(here("figures/fig8_catch_section.png"), dpi = 1000, height = 12, width = 12)
 ggsave(here("figures/fig8_catch_section_classif_4_Jan_2026.png"), dpi = 1000, height = 12, width = 12)
+
+# after revision 1
+ggsave(here("figures/after_revision1/fig8_catch_section.png"), dpi = 1000, height = 12, width = 12)

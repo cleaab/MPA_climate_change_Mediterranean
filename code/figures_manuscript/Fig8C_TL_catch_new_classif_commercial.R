@@ -1,4 +1,6 @@
-# B2c. Trophic level of landings weighted by the proportion of catch of each specie - HC_C species
+library(grid)
+
+# B2c. Tgrid# B2c. Trophic level of landings weighted by the proportion of catch of each specie - HC_C species
 # All species (for manuscript text) ---
 fig_name = "All_species"
 species_classif = read.csv(here("data-mpa-CC-paper/classification_species_commercial_class.csv")) %>%
@@ -202,7 +204,13 @@ TL_landings_Med_future_present_all_species <- ggplot() +
   geom_line(data = TL_landings_Random, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) +
   
   geom_line(data = TL_landings_lit, aes(x = mpa_coverage, y = TL_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) + 
-  
+  # Add horizontal line indicating 0% change
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    colour = "black",
+    linewidth = 1
+  ) +
   
   theme_bw() +
   theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
@@ -224,8 +232,6 @@ TL_landings_Med_future_present_all_species <- ggplot() +
 
 
 print(TL_landings_Med_future_present_all_species)
-# ggsave(here(paste0("figures/TL_landings/TL_landings_current_future_weighted_with_catches_", fig_name, ".png")), dpi = 600, height = 6, width = 6)
-# ggsave(here(paste0("figures/TL_landings/TL_landings_current_future_weighted_with_catches_10pct_", fig_name, ".png")), dpi = 600, height = 6, width = 6)
 
 
 
@@ -447,39 +453,44 @@ colors <- c("cadetblue", "darkred")
 
 
 # Entire Med Sea -------------------------------------
-
+draw_key_shaded <- function(alpha_val) {
+  function(data, params, size) {
+    grobTree(
+      rectGrob(gp = gpar(fill = alpha(data$colour, alpha_val), col = NA)),
+      draw_key_path(data, params, size)
+    )
+  }
+}
 TL_landings_Med_future_present_HC_C <- ggplot() +
   
   geom_ribbon(data = TL_landings_Random, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.3, show.legend = F) +
   
   geom_ribbon(data = TL_landings_EEZ, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.5, show.legend = F) +
   
-  geom_line(data = TL_landings_EEZ, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.6, alpha=1) +
+  geom_line(data = TL_landings_EEZ, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.6, alpha = 1, key_glyph = draw_key_shaded(0.5)) +
   
-  geom_line(data = TL_landings_Random, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) +
+  geom_line(data = TL_landings_Random, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1, key_glyph = draw_key_shaded(0.3)) +
   
-  geom_line(data = TL_landings_lit, aes(x = mpa_coverage, y = TL_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) + 
+  geom_line(data = TL_landings_lit, aes(x = mpa_coverage, y = TL_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1) +
   
-  
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "black", linewidth = 1) +
   theme_bw() +
-  theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-  theme(legend.key.size = unit(1, 'cm'), #change legend key size
-        legend.key.height = unit(1, 'cm'), #change legend key height
-        legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.title = element_text(size=12), #change legend title font size
-        legend.text = element_text(size=10)) + #change legend text font size 
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14)) +
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.height = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
   scale_colour_manual(values = colors) +
   scale_fill_manual(values = colors) +
   scale_linetype_manual(values = scenario) +
-  
-  labs(x ="MPA coverage (%)", y = "Change in TL (%)", title = "C) TL catch", subtitle = paste0(fig_name)) +
-  
+  labs(x = "MPA coverage (%)", y = "Change in TL (%)", title = "", subtitle = paste0(fig_name)) +
   theme(legend.position = "right") +
-  #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
   theme(plot.title = element_text(hjust = 0, face = "bold", size = 16)) +
-  ylim(c(-1.5,1.5))
-
-
+  ylim(c(-1.5, 1.5))
 print(TL_landings_Med_future_present_HC_C)
 # ggsave(here(paste0("figures/TL_landings/TL_landings_current_future_weighted_with_catches_", fig_name, ".png")), dpi = 600, height = 6, width = 6)
 # ggsave(here(paste0("figures/TL_landings/TL_landings_current_future_weighted_with_catches_10pct_", fig_name, ".png")), dpi = 600, height = 6, width = 6)
@@ -672,36 +683,44 @@ colors <- c("cadetblue", "darkred")
 
 # Entire Med Sea -------------------------------------
 
+draw_key_shaded <- function(alpha_val) {
+  function(data, params, size) {
+    grobTree(
+      rectGrob(gp = gpar(fill = alpha(data$colour, alpha_val), col = NA)),
+      draw_key_path(data, params, size)
+    )
+  }
+}
 TL_landings_Med_future_present_LC <- ggplot() +
   
   geom_ribbon(data = TL_landings_Random, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.3, show.legend = F) +
   
   geom_ribbon(data = TL_landings_EEZ, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.5, show.legend = F) +
   
-  geom_line(data = TL_landings_EEZ, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.6, alpha=1) +
+  geom_line(data = TL_landings_EEZ, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.6, alpha = 1, key_glyph = draw_key_shaded(0.5)) +
   
-  geom_line(data = TL_landings_Random, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) +
+  geom_line(data = TL_landings_Random, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1, key_glyph = draw_key_shaded(0.3)) +
   
-  geom_line(data = TL_landings_lit, aes(x = mpa_coverage, y = TL_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) + 
+  geom_line(data = TL_landings_lit, aes(x = mpa_coverage, y = TL_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1) +
   
-  
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "black", linewidth = 1) +
   theme_bw() +
-  theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-  theme(legend.key.size = unit(1, 'cm'), #change legend key size
-        legend.key.height = unit(1, 'cm'), #change legend key height
-        legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.title = element_text(size=12), #change legend title font size
-        legend.text = element_text(size=10)) + #change legend text font size 
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14)) +
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.height = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
   scale_colour_manual(values = colors) +
   scale_fill_manual(values = colors) +
   scale_linetype_manual(values = scenario) +
-  
-  labs(x ="MPA coverage (%)", y = "Change in TL (%)", title = "", subtitle = paste0(fig_name)) +
-  
+  labs(x = "MPA coverage (%)", y = "Change in TL (%)", title = "", subtitle = paste0(fig_name)) +
   theme(legend.position = "right") +
-  #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
   theme(plot.title = element_text(hjust = 0, face = "bold", size = 16)) +
-  ylim(c(-1.5,1.5))
+  ylim(c(-1.5, 1.5))
 
 print(TL_landings_Med_future_present_LC)
 # Both plots together:

@@ -152,39 +152,44 @@ LFI_EEZ_Med = LFI_EEZ %>%
   filter(mpa_coverage < 11)
 
 
-
-
-
+draw_key_shaded <- function(alpha_val) {
+  function(data, params, size) {
+    grobTree(
+      rectGrob(gp = gpar(fill = alpha(data$colour, alpha_val), col = NA)),
+      draw_key_path(data, params, size)
+    )
+  }
+}
 LFI_Med_future_present <- ggplot() +
   
   geom_ribbon(data = LFI_Random_Med, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.3, show.legend = F) +
   
   geom_ribbon(data = LFI_EEZ_Med, aes(x = mpa_coverage, ymin = low_change, ymax = high_change, fill = climate_scenario), alpha = 0.5, show.legend = F) +
   
-  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.6, alpha=1) +
+  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.6, alpha = 1, key_glyph = draw_key_shaded(0.5)) +
   
-  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) +
+  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1, key_glyph = draw_key_shaded(0.3)) +
   
-  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = LFI_change, colour = climate_scenario, lty = MPA_scenario), lwd = 0.4, alpha=1) + 
+  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = LFI_change, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1) +
   
-  
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "black", linewidth = 1) +
   theme_bw() +
-  theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-  theme(legend.key.size = unit(1, 'cm'), #change legend key size
-        legend.key.height = unit(1, 'cm'), #change legend key height
-        legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.title = element_text(size=12), #change legend title font size
-        legend.text = element_text(size=10)) + #change legend text font size 
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14)) +
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.height = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
   scale_colour_manual(values = colors) +
   scale_fill_manual(values = colors) +
   scale_linetype_manual(values = scenario) +
-  
   labs(x ="MPA coverage (%)", y = "Change in LFI (%)", title = "Large Fish Indicator") +
-  
   theme(legend.position = "right") +
-  #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
-# ylim(0.25, 0.43)
+  theme(plot.title = element_text(hjust = 0, face = "bold", size = 16)) 
+  #ylim(-7.2, 8.8)
 
 print(LFI_Med_future_present)
 ggsave(here("figures/LFI/LFI_current_future_Med.png"), dpi = 600, height = 6, width = 6)
@@ -207,37 +212,34 @@ LFI_EEZ_Med = LFI_EEZ %>%
   filter(mpa_coverage < 11)
 
 
-
-
-
 LFI_inside_future_present <- ggplot() +
   
-  geom_ribbon(data = LFI_Random_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.3) +
+  geom_ribbon(data = LFI_Random_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.3, show.legend = F) +
   
-  geom_ribbon(data = LFI_EEZ_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.5) +
+  geom_ribbon(data = LFI_EEZ_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.5, show.legend = F) +
   
-  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = scenario_group), lwd = 0.8, alpha=1) +
+  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.6, alpha = 1, key_glyph = draw_key_shaded(0.5)) +
   
-  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = scenario_group), lwd = 0.8, alpha=1) +
+  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1, key_glyph = draw_key_shaded(0.3)) +
   
-  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = mean_LFI_reps, colour = climate_scenario, lty = scenario), lwd = 0.8, alpha=1) + 
+  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = mean_LFI_reps, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1) +
   
-  
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "black", linewidth = 1) +
   theme_bw() +
-  theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-  theme(legend.key.size = unit(1, 'cm'), #change legend key size
-        legend.key.height = unit(1, 'cm'), #change legend key height
-        legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.title = element_text(size=12), #change legend title font size
-        legend.text = element_text(size=10)) + #change legend text font size 
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14)) +
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.height = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
   scale_colour_manual(values = colors) +
   scale_fill_manual(values = colors) +
   scale_linetype_manual(values = scenario) +
-  
   labs(x ="MPA coverage (%)", y = "LFI (> 20 cm)", title = "Inside MPAs") +
-  
   theme(legend.position = "right") +
-  #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
   ylim(0.25, 0.43)
 
@@ -262,39 +264,35 @@ LFI_EEZ_Med = LFI_EEZ %>%
   filter(mpa_coverage < 11)
 
 
-
-
-
 LFI_outside_future_present <- ggplot() +
   
-  geom_ribbon(data = LFI_Random_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.3) +
+  geom_ribbon(data = LFI_Random_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.3, show.legend = F) +
   
-  geom_ribbon(data = LFI_EEZ_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.5) +
+  geom_ribbon(data = LFI_EEZ_Med, aes(x = mpa_coverage, ymin = low, ymax = high, fill = climate_scenario), alpha = 0.5, show.legend = F) +
   
-  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = scenario_group), lwd = 0.8, alpha=1) +
+  geom_line(data = LFI_EEZ_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.6, alpha = 1, key_glyph = draw_key_shaded(0.5)) +
   
-  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = scenario_group), lwd = 0.8, alpha=1) +
+  geom_line(data = LFI_Random_Med, aes(x = mpa_coverage, y = mean, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1, key_glyph = draw_key_shaded(0.3)) +
   
-  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = mean_LFI_reps, colour = climate_scenario, lty = scenario), lwd = 0.8, alpha=1) + 
+  geom_line(data = LFI_lit_Med, aes(x = mpa_coverage, y = mean_LFI_reps, colour = climate_scenario, lty = MPA_scenario),
+            lwd = 0.4, alpha = 1) +
   
-  
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "black", linewidth = 1) +
   theme_bw() +
-  theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-  theme(legend.key.size = unit(1, 'cm'), #change legend key size
-        legend.key.height = unit(1, 'cm'), #change legend key height
-        legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.title = element_text(size=12), #change legend title font size
-        legend.text = element_text(size=10)) + #change legend text font size 
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14)) +
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.height = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
   scale_colour_manual(values = colors) +
   scale_fill_manual(values = colors) +
   scale_linetype_manual(values = scenario) +
-  
   labs(x ="MPA coverage (%)", y = "LFI (> 20 cm)", title = "Outside MPAs") +
-  
   theme(legend.position = "right") +
-  #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
   ylim(0.25, 0.43)
-
 print(LFI_outside_future_present)
 ggsave(here("figures/LFI/LFI_current_future_outside_MPAs.png"), dpi = 600, height = 6, width = 6)

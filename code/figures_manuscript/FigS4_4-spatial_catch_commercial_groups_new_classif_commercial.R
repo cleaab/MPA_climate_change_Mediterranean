@@ -66,9 +66,9 @@ for (v in position_categories){
     geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
     
     scale_fill_gradient2(
-      low = "deepskyblue4",
+      low = "darkred",
       mid = "lightyellow",
-      high = "darkred",
+      high = "deepskyblue4",
       midpoint = 0,
       limits = c(-30, 30),
       oob = scales::squish,
@@ -92,9 +92,16 @@ for (v in position_categories){
       axis.title = element_blank()
     )
   
-  # Save the plot
+  # # Save the plot
+  # ggsave(
+  #   here(paste0("figures/spatial_yield/species_categories/Delta_Y_future_present_30_limit_", cat_name, ".png")),
+  #   plot = map_effect_yield_cats_HC,
+  #   dpi = 300,
+  #   width = 10,
+  #   height = 6
+  # )
   ggsave(
-    here(paste0("figures/spatial_yield/species_categories/Delta_Y_future_present_30_limit_", cat_name, ".png")),
+    here(paste0("figures/after_revision1/Delta_Y_future_present_30_limit_", cat_name, ".png")),
     plot = map_effect_yield_cats_HC,
     dpi = 300,
     width = 10,
@@ -148,9 +155,9 @@ for (v in position_categories){
     geom_sf(data = med_bounds, fill = "gray80", color = "grey40", size = 0.3) +
     
     scale_fill_gradient2(
-      low = "deepskyblue4",
+      low = "darkred",
       mid = "lightyellow",
-      high = "darkred",
+      high = "deepskyblue4",
       midpoint = 0,
       limits = c(-30, 30),
       oob = scales::squish,
@@ -174,9 +181,17 @@ for (v in position_categories){
       axis.title = element_blank()
     )
   
-  # Save the plot
+  # # Save the plot
+  # ggsave(
+  #   here(paste0("figures/spatial_yield/species_categories/Delta_Y_future_present_30_limit_", cat_name, ".png")),
+  #   plot = map_effect_yield_cats_LC,
+  #   dpi = 300,
+  #   width = 10,
+  #   height = 6
+  # )
+  
   ggsave(
-    here(paste0("figures/spatial_yield/species_categories/Delta_Y_future_present_30_limit_", cat_name, ".png")),
+    here(paste0("figures/after_revision1/Delta_Y_future_present_30_limit_", cat_name, ".png")),
     plot = map_effect_yield_cats_LC,
     dpi = 300,
     width = 10,
