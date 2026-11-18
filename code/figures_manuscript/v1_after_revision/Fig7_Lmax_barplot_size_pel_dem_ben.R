@@ -52,6 +52,16 @@ table(compare_means$significative)
 length(unique(compare_means$species_index))
 
 # Plot barplot changes No MPAs (Supplementary Figure 6) ------------------------
+species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
+  dplyr::select(species_id, species_name, group_article1, updated_commercial_interest, size_class, vertical_position, vulnerability_cat) %>%
+  filter(!species_id %in% c(0,1,2,4, 10, 33, 54, 55, 64, 88, 93, 100)) %>% #removed anadromous/catadromous species
+  
+  mutate(
+    size_habitat_group = case_when(
+      is.na(size_class) | is.na(vertical_position) ~ NA_character_,
+      TRUE ~ paste(size_class, tolower(vertical_position))
+    ))
+
 Lmax_present_nompa = read.csv(here("data-mpa-CC-paper/model_outputs/Lmax/Lmax_nompa_present.csv")) %>%
   dplyr::select(-X) %>%
   group_by(species_index) %>%
@@ -68,15 +78,6 @@ Lmax_future_nompa = read.csv(here("data-mpa-CC-paper/model_outputs/Lmax/Lmax_nom
             L95_future_sd = sd(L95),
             L99_future_mean = mean(L99),
             L99_future_sd = sd(L99)) 
-
-species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
-  dplyr::select(species_id, species_name, group_article1, updated_commercial_interest, size_class, vertical_position, vulnerability_cat) %>%
-  filter(!species_id %in% c(0,1,2,10, 33, 54, 55, 64, 93, 100)) %>% # species removed or crashing
-  mutate(
-    size_habitat_group = case_when(
-      is.na(size_class) | is.na(vertical_position) ~ NA_character_,
-      TRUE ~ paste(size_class, tolower(vertical_position))
-    ))
 
 Lmax = Lmax_present_nompa %>%
   left_join(Lmax_future_nompa, by = "species_index") %>%
@@ -145,17 +146,6 @@ Lmax_future_mpa = read.csv(here("data-mpa-CC-paper/model_outputs/Lmax/Lmax_mpa_f
             L95_future_sd = sd(L95_future_sd_6),
             L99_future_mean = mean(L99_future_mean_6),
             L99_future_sd = sd(L99_future_sd_6))
-
-
-species_classif = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
-  dplyr::select(species_id, species_name, group_article1, updated_commercial_interest, size_class, vertical_position, vulnerability_cat) %>%
-  filter(!species_id %in% c(0,1,2,4, 10, 33, 54, 55, 64, 88, 93, 100)) %>% #removed anadromous/catadromous species
-
-  mutate(
-    size_habitat_group = case_when(
-      is.na(size_class) | is.na(vertical_position) ~ NA_character_,
-      TRUE ~ paste(size_class, tolower(vertical_position))
-    ))
 
 Lmax_nompa = Lmax_present_nompa %>%
   left_join(Lmax_future_nompa, by = "species_index") %>%
