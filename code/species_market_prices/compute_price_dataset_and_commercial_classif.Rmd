@@ -1310,20 +1310,17 @@ write.csv(SAU_data, file = "SAU_data_price.csv")
 SAU_data <- read.csv(here("data-mpa-CC-paper/fisheries_data/SAU_data_price.csv"))
 STECF_data <- read.csv(here("data-mpa-CC-paper/fisheries_data/STECF_data.csv"))
 
-groups <- read.csv(here("data/fisheries_data/classification_commercial_interest.csv"), header = TRUE, sep = ";") %>%
+groups <- read.csv(here("data-mpa-CC-paper/fisheries_data/classification_commercial_interest.csv"), header = TRUE, sep = ";") %>%
    select(species_name, group2, final_commercial_interest, species_id) %>%
    rename(commercial_interest = final_commercial_interest) %>% 
   
   mutate(species_name = case_when(species_name == "Diplodussargussargus" ~ "Diplodussargus", TRUE ~ species_name))
 
+
+groups <- read.csv(here("zenodo_accepted_paper/data-mpa-CC-paper/classification_species.csv")) %>%
+   mutate(species_name = case_when(species_name == "Diplodussargussargus" ~ "Diplodussargus", TRUE ~ species_name))
+
 ## Combining both tabs---------------------------------------------------
-# Rearranging tab
-SAU_data <- SAU_data %>%
-  ungroup() %>%
-  select(-c("group2", "species_id", "F"))
-
-
-# Joining
 combined_data <- full_join(SAU_data, STECF_data, by = intersect(colnames(SAU_data),colnames(STECF_data))) %>%
   
   left_join(groups, by = c("species_name")) %>%
@@ -1375,13 +1372,13 @@ data_osmose <- combined_data %>%
   
   ungroup() %>% 
   
-  select(year, fishing_entity, species_name, fleet_v4, gsa, tonnes, landed_value, source, group2, commercial_interest, species_id, price) %>%
+  select(year, fishing_entity, species_name, fleet_v4, gsa, tonnes, landed_value, source, species_id, price) %>%
   
   # Creating key
   unite("key", -tonnes, -landed_value, -price, -source, sep = "_", remove = FALSE) %>% 
   
   #summarising
-  group_by(key, year, fishing_entity, species_name, fleet_v4, gsa, source, group2, commercial_interest, species_id) %>% 
+  group_by(key, year, fishing_entity, species_name, fleet_v4, gsa, source, species_id) %>% 
   
   summarise(landed_value = sum(landed_value),
             tonnes = sum(tonnes),
@@ -1479,12 +1476,11 @@ ggsave(here("figures/commercial_classification/classification_commercial_interes
 # Joining tabs -----------------------------------------------------------------
 
 species = read.csv(here("data-mpa-CC-paper/classification_species.csv")) %>%
-  rename(commercial_interest_old = commercial_interest) %>%
   left_join(Price_data_mean, by = "species_name") %>%
   mutate(commercial_class = case_when(is.na(commercial_class) ~ "NC",
                                       TRUE ~ commercial_class))
 
-write.csv(species, here("data-mpa-CC-paper/classification_species_commercial_class.csv")) 
+#write.csv(species, here("data-mpa-CC-paper/classification_species_commercial_class.csv")) 
 
 
 ```
