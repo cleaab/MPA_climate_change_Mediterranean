@@ -9,7 +9,7 @@ output: html_document
 # 1.1. Loading libraries from packages
 
 ```{r}
-rm(list=ls())
+#rm(list=ls())
 #-----------------Loading packages-------------------
 
 # List of required packages
@@ -68,48 +68,14 @@ if (!dir.exists(data_path)) {
 if(dir.exists(data_path)){message("Data folder successfully unzipped")} else {stop("Data folder still missing. Check the contents of the Zenodo archive.")}
     
 ```
-# Check model configuration is in the root directory and download from zenodo if missing
-```{r}
-# Define settings
-data_folder <- "osmose-med-articleMPA-CC"
-repo_root <- here::here()
-data_path <- as.character(file.path(repo_root, data_folder))
-
-# If data folder is missing, use zenodor to download
-
-# Download if data folder doesn't exist
-if (!dir.exists(data_path)) {
-  message("Data folder not found. Attempting to download from Zenodo or to unzip zenodo folder")
-
-  if(!file.exists("content")) { 
-  # Download all files from the Zenodo record
-    message("Downloading from Zenodo... Please wait")
-  wanted_folder <- zenodor::zen_list_files(record_id = "18545814")[2]
-  zenodor::zen_download_files(record_id = "18545814", path = ".", files = wanted_folder)
-  file_path <- file.path(repo_root, "content")
-  }
-
-  if(file.exists("content")) {
-    message("Data folder successfully downloaded")
-    unzip(file_path, exdir = repo_root)
-    }
-    
-  } 
-
-if(dir.exists(data_path)){message("Data folder successfully unzipped")} else {stop("Data folder still missing. Check the contents of the Zenodo archive.")}
-  
-```
-
-
-
 # Load Med grid GSA 
 1. Assign each cell to an EEZ
 ```{r}
 # load EEZ
-Med_grid = st_read(here("data/Med_polygon.gpkg")) %>%
+Med_grid = st_read(here(file.path(data_folder, "Med_polygon.gpkg"))) %>%
   rownames_to_column("cell_ID")
 
-EEZ_MedSea = st_read("data/Med_eez/Med_Sea_eez_11.shp")
+EEZ_MedSea = st_read(file.path(data_folder, "Med_eez/Med_Sea_eez_11.shp"))
 EEZ_MedSea_3035 = st_transform(EEZ_MedSea, 3035)
 
 # Assign each cell to an EEZ
@@ -138,7 +104,7 @@ Med_grid_EEZ_df = Med_grid_EEZ %>%
 # Calculate using BIOGEO AREA MSFD - Western, Adriatic, Central, Eastern
 #link with GSAs
 
-gsa <- st_read(here("data/shapefiles/GSAs_simplified/GSAs_simplified.shp"))
+gsa <- st_read(here(file.path(data_folder, "shapefiles/GSAs_simplified/GSAs_simplified.shp")))
 
 gsa_Med <- gsa %>%
   filter(!F_GSA_LIB %in% c("GSA 28", "GSA 29", "GSA 30")) %>%
